@@ -20,13 +20,8 @@ from pypdf import PdfReader
 # sentence-transformers: text -> embedding vector conversion
 from sentence_transformers import SentenceTransformer
 
-# Text splitter import ke liye compatibility fallback:
-# kuch versions me module `langchain_text_splitters` me hota hai,
-# aur purane setup me `langchain.text_splitter` me.
-try:
-    from langchain_text_splitters import RecursiveCharacterTextSplitter
-except ImportError:
-    from langchain.text_splitter import RecursiveCharacterTextSplitter
+# Text splitter ke liye dedicated lightweight package use kar rahe hain.
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
 @dataclass

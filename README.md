@@ -14,10 +14,33 @@ Students can upload PDFs such as lecture notes, assignments, and past exam paper
 ## Tech Stack
 
 - Python
-- LangChain
+- LangChain Text Splitters
 - FAISS Vector Database
 - Sentence Transformers
-- Streamlit
+
+## Minimal Dependency Policy (Clean Setup)
+
+This project now keeps only **required dependencies for Phase 1 + Phase 2**.
+
+Current required libraries:
+
+- `pypdf` (PDF text extraction)
+- `langchain-text-splitters` (document chunking)
+- `sentence-transformers` (embedding generation)
+- `faiss-cpu` (vector database/index)
+- `numpy` (embedding matrix handling)
+
+### Rebuild clean environment (recommended when disk issues happen)
+
+```bash
+bash reset_minimal_env.sh
+```
+
+### Why this helps
+
+- Removes old heavy `.venv` and recreates a clean one.
+- Installs only required packages.
+- Uses `--no-cache-dir` to avoid cache-based disk growth.
 
 ## Phase 1: Research & Setup (1–15 March)
 

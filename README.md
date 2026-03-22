@@ -153,3 +153,30 @@ python scripts/document_pipeline.py \
 - These embeddings are indexed in FAISS for fast similarity search.
 - Metadata is preserved to support source citation in later phases.
 - This phase prepares the system for Phase 3: retrieval + answer generation.
+
+## Codespace Low Disk Warning (Permanent Fix Guide)
+
+If you see warning like **"Low disk space available"**, this is about **Codespace container storage**, not your local laptop disk.
+
+### Why this happens
+
+- Python environment (`.venv`) can become large.
+- `sentence-transformers` dependency chain installs `torch`, and sometimes heavy `nvidia` packages.
+- pip / Hugging Face caches can grow to multiple GB.
+
+### Quick safe cleanup
+
+```bash
+bash cleanup_codespace_space.sh
+```
+
+### Prevention (already applied)
+
+- `run_phase2.sh` now uses `pip install --no-cache-dir -r requirements.txt` with `--install-deps`.
+- This avoids growing pip cache on repeated installs.
+
+### If disk reaches ~100%
+
+- Yes, work can fail (save, install, git operations, indexing).
+- Run cleanup script first.
+- If still low, recreate `.venv` as a fresh smaller environment.

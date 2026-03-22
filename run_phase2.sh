@@ -74,7 +74,7 @@ fi
 
 if [[ "$INSTALL_DEPS" == "true" ]]; then
   echo "[INFO] Installing dependencies from requirements.txt"
-  pip install -r requirements.txt
+  pip install --no-cache-dir -r requirements.txt
 else
   echo "[INFO] Skipping dependency install (already installed assumed)."
   echo "[INFO] If needed, run: bash run_phase2.sh --install-deps"

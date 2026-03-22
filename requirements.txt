@@ -1,8 +1,5 @@
-langchain
 langchain-text-splitters
-llama-index
 faiss-cpu
 sentence-transformers
-streamlit
 pypdf
 numpy

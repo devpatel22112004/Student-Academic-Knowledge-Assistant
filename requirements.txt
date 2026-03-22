@@ -1,5 +1,14 @@
+# ===== REQUIRED (Original Project) =====
 langchain-text-splitters
 faiss-cpu
 sentence-transformers
 pypdf
 numpy
+
+# ===== ADDITIONAL (OCR Fallback - Our Enhancement) =====
+# Ye 3 packages humne add kiye hain scanned/image PDFs handle karne ke liye.
+# Agar sirf text-based PDFs use karoge, to ye install nahi kare.
+# System packages bhi chahiye: sudo apt-get install tesseract-ocr poppler-utils
+pytesseract
+pdf2image
+Pillow

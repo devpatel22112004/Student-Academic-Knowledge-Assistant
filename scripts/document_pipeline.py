@@ -23,6 +23,17 @@ from sentence_transformers import SentenceTransformer
 # Text splitter ke liye dedicated lightweight package use kar rahe hain.
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
+# ===== ADDITIONAL (NOT REQUIRED): OCR Fallback for Scanned PDFs =====
+# Ye section humne add kiya hai — original project me required nahi tha.
+# Scanned/image-based PDFs ke liye automatic OCR fallback provide karta hai.
+try:
+    from pdf2image import convert_from_path
+    import pytesseract
+except Exception:
+    convert_from_path = None
+    pytesseract = None
+# =======================================================================
+
 
 @dataclass
 class ChunkRecord:
@@ -45,7 +56,36 @@ def discover_pdfs(input_path: Path) -> list[Path]:
     return []
 
 
-def load_pdf_pages(pdf_path: Path) -> list[tuple[int, str]]:
+# ADDITIONAL (NOT REQUIRED): OCR Fallback Function
+# Humne ye function add kiya hai scanned PDFs handle karne ke liye.
+def run_ocr_on_page(pdf_path: Path, page_number: int, ocr_dpi: int, ocr_lang: str) -> str:
+    """ADDITIONAL: Extract text from scanned PDF page using Tesseract OCR."""
+    if convert_from_path is None or pytesseract is None:
+        return ""
+
+    try:
+        page_images = convert_from_path(
+            str(pdf_path),
+            dpi=ocr_dpi,
+            first_page=page_number,
+            last_page=page_number,
+            fmt="png",
+        )
+        if not page_images:
+            return ""
+
+        ocr_text = (pytesseract.image_to_string(page_images[0], lang=ocr_lang) or "").strip()
+        return ocr_text
+    except Exception:
+        return ""
+
+
+def load_pdf_pages(
+    pdf_path: Path,
+    use_ocr_fallback: bool,
+    ocr_dpi: int,
+    ocr_lang: str,
+) -> list[tuple[int, str]]:
     # PDF open karke page-wise text nikaalte hain.
     reader = PdfReader(str(pdf_path))
     pages: list[tuple[int, str]] = []
@@ -53,13 +93,28 @@ def load_pdf_pages(pdf_path: Path) -> list[tuple[int, str]]:
     for page_number, page in enumerate(reader.pages, start=1):
         # Empty page text ko skip karne ke liye strip + check.
         page_text = (page.extract_text() or "").strip()
+        # ADDITIONAL (NOT REQUIRED): OCR fallback for pages without selectable text
+        if not page_text and use_ocr_fallback:
+            page_text = run_ocr_on_page(
+                pdf_path=pdf_path,
+                page_number=page_number,
+                ocr_dpi=ocr_dpi,
+                ocr_lang=ocr_lang,
+            )
         if page_text:
             pages.append((page_number, page_text))
 
     return pages
 
 
-def chunk_documents(pdf_files: list[Path], chunk_size: int, chunk_overlap: int) -> list[ChunkRecord]:
+def chunk_documents(
+    pdf_files: list[Path],
+    chunk_size: int,
+    chunk_overlap: int,
+    use_ocr_fallback: bool,
+    ocr_dpi: int,
+    ocr_lang: str,
+) -> list[ChunkRecord]:
     # Recursive splitter semantic boundary preserve karte hue chunks banata hai.
     # chunk_overlap context continuity maintain karta hai.
     splitter = RecursiveCharacterTextSplitter(
@@ -73,7 +128,12 @@ def chunk_documents(pdf_files: list[Path], chunk_size: int, chunk_overlap: int) 
 
     # Har PDF -> har page -> multiple chunks.
     for pdf_file in pdf_files:
-        for page_number, page_text in load_pdf_pages(pdf_file):
+        for page_number, page_text in load_pdf_pages(
+            pdf_path=pdf_file,
+            use_ocr_fallback=use_ocr_fallback,
+            ocr_dpi=ocr_dpi,
+            ocr_lang=ocr_lang,
+        ):
             chunks = splitter.split_text(page_text)
             for chunk_text in chunks:
                 normalized_text = chunk_text.strip()
@@ -97,7 +157,11 @@ def chunk_documents(pdf_files: list[Path], chunk_size: int, chunk_overlap: int) 
 def create_embeddings(chunks: list[ChunkRecord], model_name: str, show_progress: bool) -> np.ndarray:
     # Agar chunking se kuch output hi nahi aaya to indexing possible nahi.
     if not chunks:
-        raise ValueError("No chunks were created. Check PDFs or extraction quality.")
+        raise ValueError(
+            "No chunks were created. PDF may be scanned/image-only. "
+            "(HINT: Use OCR fallback — install pytesseract + pdf2image + system tesseract/poppler) "
+            "or provide text-based PDFs."
+        )
 
     # Embedding model load karo (default: all-MiniLM-L6-v2).
     model = SentenceTransformer(model_name)
@@ -202,6 +266,23 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Embedding progress bar dikhana ho to use karein.",
     )
+    # ADDITIONAL (NOT REQUIRED): OCR-related CLI arguments added by us
+    parser.add_argument(
+        "--disable-ocr-fallback",
+        action="store_true",
+        help="[ADDITIONAL] OCR fallback ko disable karein (sirf selectable PDF text use karega).",
+    )
+    parser.add_argument(
+        "--ocr-dpi",
+        type=int,
+        default=300,
+        help="[ADDITIONAL] OCR render DPI (higher = better accuracy, slower). Default: 300.",
+    )
+    parser.add_argument(
+        "--ocr-lang",
+        default="eng",
+        help="[ADDITIONAL] Tesseract OCR language code (default: eng, use 'eng+hin' for bilingual).",
+    )
     return parser.parse_args()
 
 
@@ -227,6 +308,9 @@ def main() -> None:
         pdf_files=pdf_files,
         chunk_size=args.chunk_size,
         chunk_overlap=args.chunk_overlap,
+        use_ocr_fallback=not args.disable_ocr_fallback,
+        ocr_dpi=args.ocr_dpi,
+        ocr_lang=args.ocr_lang,
     )
     print(f"Created {len(chunks)} chunk(s).")
 

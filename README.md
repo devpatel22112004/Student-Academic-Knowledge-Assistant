@@ -22,13 +22,25 @@ Students can upload PDFs such as lecture notes, assignments, and past exam paper
 
 This project now keeps only **required dependencies for Phase 1 + Phase 2**.
 
-Current required libraries:
+**REQUIRED (Original Project):**
 
 - `pypdf` (PDF text extraction)
 - `langchain-text-splitters` (document chunking)
 - `sentence-transformers` (embedding generation)
 - `faiss-cpu` (vector database/index)
 - `numpy` (embedding matrix handling)
+
+**ADDITIONAL – OCR Fallback (Our Enhancement):**
+
+- `pytesseract` + `pdf2image` + `Pillow` (scanned PDF support)
+- System packages: `tesseract-ocr`, `poppler-utils`
+
+To install system packages for OCR fallback:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y tesseract-ocr poppler-utils
+```
 
 ### Rebuild clean environment (recommended when disk issues happen)
 
@@ -120,6 +132,31 @@ source .venv/bin/activate
 pip install -r requirements.txt
 python scripts/document_pipeline.py --input data/pdfs --output outputs/vector_store
 ```
+
+### [ADDITIONAL] Scanned PDF support (OCR Fallback – Our Enhancement)
+
+This feature was **not part of the original project requirements**. We added it to handle scanned/image-only PDFs.
+
+**How it works:**
+
+1. Pipeline tries normal PDF text extraction first (using `pypdf`).
+2. If a page has no selectable text, OCR fallback runs automatically using Tesseract.
+3. Chunks are created from extracted text (normal or OCR).
+
+**To disable OCR fallback** and use only text-based PDFs:
+
+```bash
+python scripts/document_pipeline.py --input data/pdfs --output outputs/vector_store --disable-ocr-fallback
+```
+
+**Tune OCR quality:**
+
+```bash
+python scripts/document_pipeline.py --input data/pdfs --output outputs/vector_store --ocr-dpi 400 --ocr-lang eng+hin
+```
+
+- `--ocr-dpi`: Render resolution (default 300; higher = better quality, slower).
+- `--ocr-lang`: Tesseract language codes (e.g., `eng`, `eng+hin` for bilingual).
 
 ### One-command direct run (recommended)
 

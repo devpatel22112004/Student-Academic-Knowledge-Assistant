@@ -71,3 +71,85 @@ python scripts/pdf_loader.py --input data/pdfs/sample.pdf --output outputs
 
 - For scanned PDFs (image-only), text extraction may return very little text.
 - OCR support can be added in a later phase if needed.
+
+## Phase 2: Document Processing Pipeline (16–31 March)
+
+### Objective
+
+- Build a complete document ingestion and indexing pipeline.
+
+### Tasks completed in this phase
+
+1. Read PDFs and extract clean page-level text.
+2. Split text into smaller overlapping chunks.
+3. Generate dense vector embeddings for each chunk.
+4. Store all vectors in FAISS vector database.
+5. Save metadata (chunk ID, source file, page number, chunk text).
+
+### Script used
+
+- `scripts/document_pipeline.py`
+
+### Run command
+
+```bash
+source .venv/bin/activate
+pip install -r requirements.txt
+python scripts/document_pipeline.py --input data/pdfs --output outputs/vector_store
+```
+
+### One-command direct run (recommended)
+
+```bash
+bash run_phase2.sh
+```
+
+Direct script with custom parameters:
+
+```bash
+bash run_phase2.sh data/pdfs outputs/vector_store 600 100 sentence-transformers/all-MiniLM-L6-v2
+```
+
+Manual fallback (if you want full control every time):
+
+```bash
+source .venv/bin/activate
+pip install -r requirements.txt
+python scripts/document_pipeline.py \
+	--input data/pdfs \
+	--output outputs/vector_store \
+	--chunk-size 600 \
+	--chunk-overlap 100 \
+	--model sentence-transformers/all-MiniLM-L6-v2
+```
+
+Single PDF input example:
+
+```bash
+python scripts/document_pipeline.py --input data/pdfs/samp.pdf --output outputs/vector_store
+```
+
+### Optional tuning parameters
+
+```bash
+python scripts/document_pipeline.py \
+	--input data/pdfs \
+	--output outputs/vector_store \
+	--chunk-size 600 \
+	--chunk-overlap 100 \
+	--model sentence-transformers/all-MiniLM-L6-v2
+```
+
+### Output artifacts
+
+- `outputs/vector_store/index.faiss` → FAISS index file
+- `outputs/vector_store/metadata.json` → chunk metadata for traceability
+- `outputs/vector_store/vectors_shape.json` → vector count and embedding dimension
+
+### How to explain this to your sir
+
+- In Phase 2, we convert raw PDF text into semantic units (chunks).
+- Every chunk is converted into a numerical embedding using a transformer model.
+- These embeddings are indexed in FAISS for fast similarity search.
+- Metadata is preserved to support source citation in later phases.
+- This phase prepares the system for Phase 3: retrieval + answer generation.

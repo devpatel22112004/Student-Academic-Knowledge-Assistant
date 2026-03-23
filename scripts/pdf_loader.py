@@ -1,13 +1,28 @@
-# Phase 1 — Document Loader Script
-# Kaam: PDF/TXT file(s) se text nikalna aur .txt file me save karna
-# Ye RAG pipeline ka pehla step hai — pehle document load karo, tabhi kuch aage ho sakta hai
+#!/usr/bin/env python3
+
+"""
+PHASE 1 — Document Loader (PDF + TXT Support)
+
+क्या करता है:
+1) Documents discover (PDF + TXT दोनों)
+2) Text extract:
+   - PDF: pypdf से page-wise
+   - TXT: Native Python (कोई extra library नहीं)
+3) Output: .txt files
+
+Dependencies:
+REQUIRED: pypdf (PDF के लिए)
+NOT NEEDED FOR TXT: TXT plain text है, pathlib.read_text() काफी है (built-in)
+
+Usage: bash run_phase1.sh data outputs
+"""
 
 from __future__ import annotations
 
 import argparse
 from pathlib import Path
 
-# pypdf library use hoti hai PDF ke andar ka text padhne ke liye
+# pypdf: PDF text extraction के लिए (TXT के लिए नहीं चाहिए)
 from pypdf import PdfReader
 
 

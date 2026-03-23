@@ -1,7 +1,34 @@
+#!/usr/bin/env python3
+
+"""
+PHASE 2 — Document Processing Pipeline (PDF + TXT Support)
+
+क्या करता है:
+1) Documents discover (PDF + TXT दोनों)
+2) Text extract (PDF: pypdf, TXT: native Python)
+3) Split into semantic chunks
+4) Generate dense embeddings
+5) Build FAISS vector index
+6) Save metadata + vector info
+
+Dependencies:
+REQUIRED: pypdf, langchain-text-splitters, sentence-transformers, faiss-cpu, numpy
+ADDITIONAL (हमने): pytesseract, pdf2image (OCR के लिए)
+NOT NEEDED FOR TXT: TXT extraction के लिए कोई extra library नहीं
+
+Usage: bash run_phase2.sh data outputs/vector_store
+Output: Unified vector_store में FAISS index + metadata + shapes
+
+Key Insight:
+- PDF: page-based processing (page 1, page 2, ...)
+- TXT: block-based processing (सब content as pseudo-page 1)
+- Final output: दोनों के लिए same metadata format!
+"""
+
 from __future__ import annotations
 
 # Phase 2 — Document Processing Pipeline
-# Kaam: PDFs ko chunk karo, embeddings banao, aur FAISS vector DB me store karo.
+# Kaam: PDF/TXT documents ko chunk karo, embeddings banao, aur FAISS vector DB me store karo.
 # Ye script indexing step complete karta hai jo retrieval ke liye base banata hai.
 
 import argparse

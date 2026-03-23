@@ -1,26 +1,94 @@
 # Student Academic Knowledge Assistant (RAG-Based AI System)
 
-This project is an AI-powered academic assistant that helps students interact with their study materials.
+This project is an AI-powered academic assistant that helps students interact with their study materials (PDFs and TXT files).
 
-Students can upload study material files (PDFs and text files). The system allows users to ask questions about the uploaded documents and generates answers using Retrieval Augmented Generation (RAG).
+The system allows users to upload documents and ask questions about them, generating answers using Retrieval Augmented Generation (RAG) with source citations.
+
+---
+
+## Quick Start
+
+```bash
+# Setup (one-time)
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+# Run everything (PDF + TXT support)
+bash run_phase1.sh data outputs
+bash run_phase2.sh data outputs/vector_store
+
+# Query your documents (Phase 3 - coming soon)
+```
+
+---
+
+## Full Documentation
+
+**See [DOCUMENTATION.md](DOCUMENTATION.md) for complete details:**
+- Architecture and data flow
+- Dependency explanation (including why TXT needs NO extra libraries)
+- Code structure with examples
+- All use cases and troubleshooting
+
+---
+
+## Files Structure
+
+```
+Student-Academic-Knowledge-Assistant/
+├── data/                       # Place your PDFs and TXT files here
+│   ├── pdfs/                   #   └─ PDF documents
+│   ├── tesla.txt               #   └─ TXT documents
+│   └── notes.txt
+│
+├── scripts/
+│   ├── pdf_loader.py           # Phase 1: Document extraction (PDF + TXT)
+│   └── document_pipeline.py     # Phase 2: Chunking + embedding + indexing
+│
+├── outputs/
+│   ├── phase1_extracted/       # Phase 1 output (extracted text)
+│   └── vector_store/           # Phase 2 output (FAISS index + metadata)
+│
+├── run_phase1.sh               # Phase 1 convenient runner
+├── run_phase2.sh               # Phase 2 convenient runner
+├── requirements.txt            # Dependencies
+├── README.md                   # This file (quick start)
+└── DOCUMENTATION.md            # Detailed technical guide
+```
+
+---
 
 ## Features
 
-- Upload academic PDFs/TXT files
-- Ask questions related to documents
-- AI-generated answers using document context
-- Source citation (document name and page number)
+✅ **PDF Support** — Full page-wise text extraction  
+✅ **TXT Support** — Plain text file ingestion  
+✅ **Semantic Chunking** — Smart text splitting with overlap  
+✅ **Dense Embeddings** — Sentence-Transformers model  
+✅ **Fast Retrieval** — FAISS vector indexing  
+✅ **Metadata Tracking** — Source document + page reference  
+✅ **OCR Fallback** — [ADDITIONAL] Scanned PDF support  
+
+---
 
 ## Tech Stack
 
-- Python
-- LangChain Text Splitters
-- FAISS Vector Database
-- Sentence Transformers
+- **Document Loading**: `pypdf`, native Python
+- **Chunking**: `langchain-text-splitters`
+- **Embeddings**: `sentence-transformers`
+- **Indexing**: `faiss-cpu`
+- **Matrix Operations**: `numpy`
 
-## Dependency Policy
+---
 
-This project keeps only **required dependencies for Phase 1 + Phase 2**.
+## Next Steps
+
+1. Place PDFs/TXT files in `data/` folder
+2. Run: `bash run_phase2.sh data outputs/vector_store`
+3. Check `outputs/vector_store/metadata.json` for indexed chunks
+4. Phase 3 (retrieval + QA) coming soon!
+
+
 
 **REQUIRED (Original Project):**
 

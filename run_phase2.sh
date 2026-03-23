@@ -28,7 +28,7 @@ set -o pipefail
 #   --install-deps = pip install -r requirements.txt run karega (optional)
 #   --verbose      = extra logs/warnings dekhna ho to
 #   --show-progress= embedding progress bar dekhna ho to
-#   $1 = input path (PDF file ya folder) [default: data/pdfs]
+#   $1 = input path (PDF/TXT file ya folder) [default: data/pdfs]
 #   $2 = output path [default: outputs/vector_store]
 #   $3 = chunk size [default: 600]
 #   $4 = chunk overlap [default: 100]

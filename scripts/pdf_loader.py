@@ -1,5 +1,5 @@
-# Phase 1 — PDF Loader Script
-# Kaam: PDF file(s) se page-wise text nikalna aur .txt file me save karna
+# Phase 1 — Document Loader Script
+# Kaam: PDF/TXT file(s) se text nikalna aur .txt file me save karna
 # Ye RAG pipeline ka pehla step hai — pehle document load karo, tabhi kuch aage ho sakta hai
 
 from __future__ import annotations
@@ -27,14 +27,21 @@ def extract_pdf_text(pdf_path: Path) -> str:
     return "\n".join(page_sections).strip()
 
 
-def discover_pdfs(input_path: Path) -> list[Path]:
-    # Agar seedha ek PDF file di hai to uski list return karo
-    if input_path.is_file() and input_path.suffix.lower() == ".pdf":
+def extract_txt_text(txt_path: Path) -> str:
+    # TXT file ko seedha UTF-8 me read karo.
+    return txt_path.read_text(encoding="utf-8").strip()
+
+
+def discover_documents(input_path: Path) -> list[Path]:
+    # Agar seedha ek supported file di hai to uski list return karo
+    if input_path.is_file() and input_path.suffix.lower() in {".pdf", ".txt"}:
         return [input_path]
 
-    # Agar folder diya hai to usme se sab .pdf files dhundo (sub-folders bhi)
+    # Agar folder diya hai to usme se sab .pdf/.txt files dhundo (sub-folders bhi)
     if input_path.is_dir():
-        return sorted(input_path.rglob("*.pdf"))
+        pdf_files = list(input_path.rglob("*.pdf"))
+        txt_files = list(input_path.rglob("*.txt"))
+        return sorted(pdf_files + txt_files)
 
     # Kuch nahi mila to empty list
     return []
@@ -45,9 +52,9 @@ def ensure_output_dir(output_dir: Path) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
 
 
-def write_extracted_text(output_dir: Path, pdf_path: Path, text: str) -> Path:
-    # Output file ka naam PDF ke naam jaisa rakho, sirf extension .txt kar do
-    output_file = output_dir / f"{pdf_path.stem}.txt"
+def write_extracted_text(output_dir: Path, source_path: Path, text: str) -> Path:
+    # Output file ka naam source file ke stem jaisa rakho, extension .txt rahega
+    output_file = output_dir / f"{source_path.stem}.txt"
     # Extracted text ko file me UTF-8 encoding me likho
     output_file.write_text(text, encoding="utf-8")
     return output_file
@@ -56,13 +63,13 @@ def write_extracted_text(output_dir: Path, pdf_path: Path, text: str) -> Path:
 def parse_args() -> argparse.Namespace:
     # Command line se --input aur --output arguments lene ka setup
     parser = argparse.ArgumentParser(
-        description="PDF files load karo aur unka text extract karo."
+        description="PDF/TXT files load karo aur unka text extract karo."
     )
-    # --input: PDF file ya folder ka path (zaruri argument)
+    # --input: PDF/TXT file ya folder ka path (zaruri argument)
     parser.add_argument(
         "--input",
         required=True,
-        help="PDF file ya folder ka path jisme PDFs rakhi hain.",
+        help="PDF/TXT file ya folder ka path jisme documents rakhe hain.",
     )
     # --output: text files kahan save karni hain (default: outputs folder)
     parser.add_argument(
@@ -79,22 +86,26 @@ def main() -> None:
     input_path = Path(args.input)
     output_dir = Path(args.output)
 
-    # Input path se sab PDF files dhundo
-    pdf_files = discover_pdfs(input_path)
+    # Input path se sab supported documents dhundo
+    documents = discover_documents(input_path)
 
-    # Agar koi PDF nahi mili to error do
-    if not pdf_files:
-        raise FileNotFoundError(f"Koi PDF nahi mili yahan: {input_path}")
+    # Agar koi supported file nahi mili to error do
+    if not documents:
+        raise FileNotFoundError(f"Koi supported file (.pdf/.txt) nahi mili yahan: {input_path}")
 
     # Output folder banao agar pehle se nahi hai
     ensure_output_dir(output_dir)
 
-    # Har PDF ke liye: text nikalo aur file me save karo
-    for pdf_file in pdf_files:
-        text = extract_pdf_text(pdf_file)
-        output_file = write_extracted_text(output_dir, pdf_file, text)
+    # Har document ke liye: text nikalo aur file me save karo
+    for source_file in documents:
+        if source_file.suffix.lower() == ".pdf":
+            text = extract_pdf_text(source_file)
+        else:
+            text = extract_txt_text(source_file)
+
+        output_file = write_extracted_text(output_dir, source_file, text)
         # Console me batao ki kaunsi file process hui aur output kahan gayi
-        print(f"Processed: {pdf_file} -> {output_file}")
+        print(f"Processed: {source_file} -> {output_file}")
 
 
 # Ye block tabhi chalta hai jab hum seedha is file ko run karte hain

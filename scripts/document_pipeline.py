@@ -45,13 +45,15 @@ class ChunkRecord:
     text: str
 
 
-def discover_pdfs(input_path: Path) -> list[Path]:
-    # Agar input direct PDF file hai to usko list me return karo.
-    if input_path.is_file() and input_path.suffix.lower() == ".pdf":
+def discover_documents(input_path: Path) -> list[Path]:
+    # Agar input direct supported file hai to usko list me return karo.
+    if input_path.is_file() and input_path.suffix.lower() in {".pdf", ".txt"}:
         return [input_path]
-    # Agar input folder hai to us folder (aur subfolders) me sab PDFs dhundo.
+    # Agar input folder hai to us folder (aur subfolders) me sab PDFs/TXTs dhundo.
     if input_path.is_dir():
-        return sorted(input_path.rglob("*.pdf"))
+        pdf_files = list(input_path.rglob("*.pdf"))
+        txt_files = list(input_path.rglob("*.txt"))
+        return sorted(pdf_files + txt_files)
     # Invalid path case me empty list return.
     return []
 
@@ -107,8 +109,16 @@ def load_pdf_pages(
     return pages
 
 
+def load_txt_pages(txt_path: Path) -> list[tuple[int, str]]:
+    # TXT ke liye ek pseudo page (1) treat karte hain.
+    txt_content = txt_path.read_text(encoding="utf-8").strip()
+    if not txt_content:
+        return []
+    return [(1, txt_content)]
+
+
 def chunk_documents(
-    pdf_files: list[Path],
+    document_files: list[Path],
     chunk_size: int,
     chunk_overlap: int,
     use_ocr_fallback: bool,
@@ -126,14 +136,19 @@ def chunk_documents(
     chunk_records: list[ChunkRecord] = []
     chunk_id = 0
 
-    # Har PDF -> har page -> multiple chunks.
-    for pdf_file in pdf_files:
-        for page_number, page_text in load_pdf_pages(
-            pdf_path=pdf_file,
-            use_ocr_fallback=use_ocr_fallback,
-            ocr_dpi=ocr_dpi,
-            ocr_lang=ocr_lang,
-        ):
+    # Har document -> page/text block -> multiple chunks.
+    for source_file in document_files:
+        if source_file.suffix.lower() == ".pdf":
+            page_entries = load_pdf_pages(
+                pdf_path=source_file,
+                use_ocr_fallback=use_ocr_fallback,
+                ocr_dpi=ocr_dpi,
+                ocr_lang=ocr_lang,
+            )
+        else:
+            page_entries = load_txt_pages(source_file)
+
+        for page_number, page_text in page_entries:
             chunks = splitter.split_text(page_text)
             for chunk_text in chunks:
                 normalized_text = chunk_text.strip()
@@ -144,7 +159,7 @@ def chunk_documents(
                 chunk_records.append(
                     ChunkRecord(
                         chunk_id=chunk_id,
-                        source_file=pdf_file.name,
+                        source_file=source_file.name,
                         page_number=page_number,
                         text=normalized_text,
                     )
@@ -158,9 +173,9 @@ def create_embeddings(chunks: list[ChunkRecord], model_name: str, show_progress:
     # Agar chunking se kuch output hi nahi aaya to indexing possible nahi.
     if not chunks:
         raise ValueError(
-            "No chunks were created. PDF may be scanned/image-only. "
+            "No chunks were created. Input files may be empty or non-extractable. "
             "(HINT: Use OCR fallback — install pytesseract + pdf2image + system tesseract/poppler) "
-            "or provide text-based PDFs."
+            "or provide valid text-based PDF/TXT files."
         )
 
     # Embedding model load karo (default: all-MiniLM-L6-v2).
@@ -239,8 +254,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Phase 2 pipeline: chunk text, generate embeddings, and index in FAISS."
     )
-    # Input: single PDF ya PDF directory.
-    parser.add_argument("--input", required=True, help="PDF file path or directory containing PDFs.")
+    # Input: single document file ya directory.
+    parser.add_argument("--input", required=True, help="PDF/TXT file path or directory containing documents.")
     # Output: index + metadata kaha save karna hai.
     parser.add_argument(
         "--output",
@@ -296,16 +311,16 @@ def main() -> None:
     input_path = Path(args.input)
     output_dir = Path(args.output)
 
-    # 2) PDF discovery
-    pdf_files = discover_pdfs(input_path)
-    if not pdf_files:
-        raise FileNotFoundError(f"No PDF found at: {input_path}")
+    # 2) Input document discovery
+    document_files = discover_documents(input_path)
+    if not document_files:
+        raise FileNotFoundError(f"No supported file (.pdf/.txt) found at: {input_path}")
 
-    print(f"Found {len(pdf_files)} PDF file(s).")
+    print(f"Found {len(document_files)} document file(s).")
 
     # 3) Chunking
     chunks = chunk_documents(
-        pdf_files=pdf_files,
+        document_files=document_files,
         chunk_size=args.chunk_size,
         chunk_overlap=args.chunk_overlap,
         use_ocr_fallback=not args.disable_ocr_fallback,

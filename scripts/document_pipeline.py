@@ -53,6 +53,8 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 # ===== ADDITIONAL (NOT REQUIRED): OCR Fallback for Scanned PDFs =====
 # Ye section humne add kiya hai — original project me required nahi tha.
 # Scanned/image-based PDFs ke liye automatic OCR fallback provide karta hai.
+# Design choice: import failures ko soft-fail karte hain taaki text-based
+# PDF/TXT pipeline OCR dependency ke bina bhi run hoti rahe.
 try:
     from pdf2image import convert_from_path
     import pytesseract
@@ -73,6 +75,9 @@ class ChunkRecord:
 
 
 def discover_documents(input_path: Path) -> list[Path]:
+    # Short: Input documents discover karo.
+    # Concept: Same discovery rule (PDF+TXT) Phase 1/Phase 2 consistency rakhta hai,
+    # jisse run modes (single file/folder) predictable ban jate hain.
     # Agar input direct supported file hai to usko list me return karo.
     if input_path.is_file() and input_path.suffix.lower() in {".pdf", ".txt"}:
         return [input_path]
@@ -89,6 +94,7 @@ def discover_documents(input_path: Path) -> list[Path]:
 # Humne ye function add kiya hai scanned PDFs handle karne ke liye.
 def run_ocr_on_page(pdf_path: Path, page_number: int, ocr_dpi: int, ocr_lang: str) -> str:
     """ADDITIONAL: Extract text from scanned PDF page using Tesseract OCR."""
+    # OCR libs missing hon to gracefully empty text return karo.
     if convert_from_path is None or pytesseract is None:
         return ""
 
@@ -115,7 +121,9 @@ def load_pdf_pages(
     ocr_dpi: int,
     ocr_lang: str,
 ) -> list[tuple[int, str]]:
-    # PDF open karke page-wise text nikaalte hain.
+    # Short: PDF ko page tuples me convert karo.
+    # Concept: Per-page tuples metadata traceability improve karte hain
+    # (source_file + page_number => stronger citation quality).
     reader = PdfReader(str(pdf_path))
     pages: list[tuple[int, str]] = []
 
@@ -137,6 +145,9 @@ def load_pdf_pages(
 
 
 def load_txt_pages(txt_path: Path) -> list[tuple[int, str]]:
+    # Short: TXT ko pseudo-page model me map karo.
+    # Concept: Uniform schema (page_number + text) se chunking code shared rehta hai,
+    # alag pipeline branches maintain nahi karni padti.
     # TXT ke liye ek pseudo page (1) treat karte hain.
     txt_content = txt_path.read_text(encoding="utf-8").strip()
     if not txt_content:
@@ -152,8 +163,9 @@ def chunk_documents(
     ocr_dpi: int,
     ocr_lang: str,
 ) -> list[ChunkRecord]:
-    # Recursive splitter semantic boundary preserve karte hue chunks banata hai.
-    # chunk_overlap context continuity maintain karta hai.
+    # Short: Text ko model-friendly segments me split karo.
+    # Concept: chunk_size retrieval granularity control karta hai,
+    # chunk_overlap local context continuity preserve karta hai.
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
@@ -164,6 +176,7 @@ def chunk_documents(
     chunk_id = 0
 
     # Har document -> page/text block -> multiple chunks.
+    # Yahi stage retrieval quality ka core driver hai.
     for source_file in document_files:
         if source_file.suffix.lower() == ".pdf":
             page_entries = load_pdf_pages(
@@ -206,6 +219,8 @@ def create_embeddings(chunks: list[ChunkRecord], model_name: str, show_progress:
         )
 
     # Embedding model load karo (default: all-MiniLM-L6-v2).
+    # Concept: Dense vectors semantic similarity compare karne ke liye use hote hain,
+    # exact keyword match se better retrieval milta hai.
     model = SentenceTransformer(model_name)
     # Sirf text list pass karte hain embedding generation ke liye.
     texts = [chunk.text for chunk in chunks]
@@ -242,6 +257,9 @@ def configure_runtime_logs(verbose: bool) -> None:
 
 
 def build_faiss_index(vectors: np.ndarray) -> faiss.IndexFlatL2:
+    # Short: FAISS index initialize karo.
+    # Concept: IndexFlatL2 brute-force nearest-neighbor use karta hai;
+    # small/medium datasets me simple aur reliable baseline hota hai.
     # Embedding dimension detect karke L2 distance index banate hain.
     embedding_dimension = vectors.shape[1]
     index = faiss.IndexFlatL2(embedding_dimension)
@@ -258,12 +276,13 @@ def save_artifacts(output_dir: Path, index: faiss.IndexFlatL2, chunks: list[Chun
     faiss.write_index(index, str(output_dir / "index.faiss"))
 
     # 2) Metadata save (chunk-level traceability)
+    # Concept: Retrieval result me chunk text ke saath source explain karna possible hota hai.
     (output_dir / "metadata.json").write_text(
         json.dumps([asdict(chunk) for chunk in chunks], ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
 
-    # 3) Quick summary save (sanity check ke liye)
+    # 3) Quick summary save (sanity check + monitoring ke liye)
     (output_dir / "vectors_shape.json").write_text(
         json.dumps(
             {

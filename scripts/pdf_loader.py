@@ -27,7 +27,9 @@ from pypdf import PdfReader
 
 
 def extract_pdf_text(pdf_path: Path) -> str:
-    # PDF file ko open karo aur reader object banao
+    # Short: PDF ko read karo.
+    # Concept: Hum page-wise extraction rakhte hain taaki downstream metadata me
+    # page context preserve rahe (later citation/retrieval me useful).
     reader = PdfReader(str(pdf_path))
     page_sections: list[str] = []
 
@@ -43,16 +45,21 @@ def extract_pdf_text(pdf_path: Path) -> str:
 
 
 def extract_txt_text(txt_path: Path) -> str:
-    # TXT file ko seedha UTF-8 me read karo.
+    # Short: TXT ko direct read karo.
+    # Concept: TXT plain-text hota hai, isliye yahan kisi external parser ki
+    # zarurat nahi padti (zero extra dependency path).
     return txt_path.read_text(encoding="utf-8").strip()
 
 
 def discover_documents(input_path: Path) -> list[Path]:
-    # Agar seedha ek supported file di hai to uski list return karo
+    # Short: Supported inputs identify karo.
+    # Concept: File-mode aur folder-mode dono support karke script ko
+    # automation-friendly banaya gaya hai.
+    # Agar seedha ek supported file di hai to uski list return karo.
     if input_path.is_file() and input_path.suffix.lower() in {".pdf", ".txt"}:
         return [input_path]
 
-    # Agar folder diya hai to usme se sab .pdf/.txt files dhundo (sub-folders bhi)
+    # Agar folder diya hai to usme se sab .pdf/.txt files dhundo (sub-folders bhi).
     if input_path.is_dir():
         pdf_files = list(input_path.rglob("*.pdf"))
         txt_files = list(input_path.rglob("*.txt"))
@@ -68,7 +75,10 @@ def ensure_output_dir(output_dir: Path) -> None:
 
 
 def write_extracted_text(output_dir: Path, source_path: Path, text: str) -> Path:
-    # Output file ka naam source file ke stem jaisa rakho, extension .txt rahega
+    # Short: Output file name normalize karo.
+    # Concept: Har input ko normalized .txt me convert karne se Phase 2 ke liye
+    # ingestion format consistent rehta hai.
+    # Output file ka naam source file ke stem jaisa rakho, extension .txt rahega.
     output_file = output_dir / f"{source_path.stem}.txt"
     # Extracted text ko file me UTF-8 encoding me likho
     output_file.write_text(text, encoding="utf-8")
@@ -111,7 +121,8 @@ def main() -> None:
     # Output folder banao agar pehle se nahi hai
     ensure_output_dir(output_dir)
 
-    # Har document ke liye: text nikalo aur file me save karo
+    # Har document ke liye text extraction strategy extension-based choose hoti hai.
+    # PDF -> structured page extraction, TXT -> direct raw text read.
     for source_file in documents:
         if source_file.suffix.lower() == ".pdf":
             text = extract_pdf_text(source_file)

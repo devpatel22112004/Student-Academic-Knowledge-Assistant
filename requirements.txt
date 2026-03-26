@@ -1,4 +1,7 @@
 # ===== REQUIRED (Original Project) =====
+# Short: Inke bina Phase 1 + Phase 2 core pipeline nahi chalegi.
+# Concept: Ye stack text extraction -> chunking -> embeddings -> vector index
+# complete karta hai, jo semantic retrieval ka base hai.
 langchain-text-splitters
 faiss-cpu
 sentence-transformers
@@ -9,6 +12,8 @@ numpy
 # Ye 3 packages humne add kiye hain scanned/image PDFs handle karne ke liye.
 # Agar sirf text-based PDFs use karoge, to ye install nahi kare.
 # System packages bhi chahiye: sudo apt-get install tesseract-ocr poppler-utils
+# Concept: OCR optional path hai; text-selectable docs ke liye core pipeline
+# already sufficient hai.
 pytesseract
 pdf2image
 Pillow

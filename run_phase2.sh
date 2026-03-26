@@ -6,6 +6,9 @@ set -o pipefail
 # Phase 2 Direct Runner (Document Processing Pipeline)
 # =====================================================
 # Is script ko direct run karke aap Phase 2 indexing kar sakte ho.
+# Short: Text ko searchable vectors me convert karta hai.
+# Concept: Ye retrieval backbone banata hai - yahi data later semantic
+# question answering me nearest relevant context return karta hai.
 # Ye script ye steps karta hai:
 # 1) Virtual environment activate karta hai (agar .venv present ho)
 # 2) (Optional) Required packages install/update karta hai
@@ -64,6 +67,10 @@ CHUNK_SIZE="${3:-600}"
 CHUNK_OVERLAP="${4:-100}"
 MODEL_NAME="${5:-sentence-transformers/all-MiniLM-L6-v2}"
 
+# Chunking defaults trade-off:
+# - chunk size bada -> context richer, but granularity coarse.
+# - overlap bada -> continuity better, but duplicate tokens increase.
+
 if [[ -d ".venv" ]]; then
   echo "[INFO] Activating virtual environment (.venv)"
   # shellcheck disable=SC1091
@@ -74,6 +81,7 @@ fi
 
 if [[ "$INSTALL_DEPS" == "true" ]]; then
   echo "[INFO] Installing dependencies from requirements.txt"
+  # Dependency sync ensures local run and CI behavior consistent rahe.
   pip install --no-cache-dir -r requirements.txt
 else
   echo "[INFO] Skipping dependency install (already installed assumed)."
@@ -99,6 +107,7 @@ if [[ "$SHOW_PROGRESS" == "true" ]]; then
 fi
 
 if [[ "$VERBOSE" == "true" ]]; then
+  # Verbose mode debugging/troubleshooting ke liye best hai.
   "${CMD[@]}"
 else
   # Quiet mode me sirf known harmless noise hide karte hain:

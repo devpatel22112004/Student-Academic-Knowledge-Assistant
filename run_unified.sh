@@ -4,6 +4,9 @@
 # UNIFIED SCRIPT: Phase 1 + Phase 2 in ONE command
 # Handles BOTH PDF and TXT files automatically
 ###############################################################################
+# Short: Ek command me extraction + indexing complete.
+# Concept: Operational complexity kam hoti hai - user ko phase-order ya
+# intermediate wiring manually manage nahi karni padti.
 
 set -e
 
@@ -23,6 +26,8 @@ CHUNK_SIZE="${4:-600}"
 CHUNK_OVERLAP="${5:-100}"
 MODEL_NAME="${6:-sentence-transformers/all-MiniLM-L6-v2}"
 
+# Ye parameters directly Phase 2 semantic retrieval behavior influence karte hain.
+
 echo "[UNIFIED] Running complete pipeline..."
 echo "[UNIFIED] Input: $INPUT_FOLDER"
 echo "[UNIFIED] Output: $VECTOR_STORE_FOLDER"
@@ -30,10 +35,12 @@ echo ""
 
 # STEP 1: Phase 1 - Extract text from all documents (PDF + TXT)
 echo "[STEP 1/2] Running Phase 1: Document Extraction..."
+# Input folder ke andar mixed sources (PDF/TXT) auto-discover hote hain.
 python3 scripts/pdf_loader.py --input "$INPUT_FOLDER" --output "$EXTRACTED_FOLDER"
 
 # STEP 2: Phase 2 - Create vector store from extracted text
 echo "[STEP 2/2] Running Phase 2: Embeddings + Vector Store..."
+# Phase 1 ka normalized text pass karne se pipeline deterministic rehti hai.
 python3 scripts/document_pipeline.py --input "$EXTRACTED_FOLDER" --output "$VECTOR_STORE_FOLDER" --chunk-size "$CHUNK_SIZE" --chunk-overlap "$CHUNK_OVERLAP" --model "$MODEL_NAME"
 
 echo ""

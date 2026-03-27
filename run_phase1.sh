@@ -5,14 +5,8 @@ set -o pipefail
 # ==============================================
 # Phase 1 Direct Runner (PDF/TXT Text Extraction)
 # ==============================================
-# Is script se aap Phase 1 directly run kar sakte ho.
-# Short: Raw documents ko machine-readable text me convert karta hai.
-# Concept: Ye ingestion gateway hai - agar extraction clean hoga to
-# downstream chunking, embeddings, aur retrieval quality better hogi.
-# Ye script ye steps karta hai:
-# 1) Virtual environment activate karta hai (agar .venv present ho)
-# 2) (Optional) Dependencies install/update karta hai
-# 3) pdf_loader.py run karta hai
+# Purpose: Run Phase 1 extraction in a consistent way.
+# Flow: activate env -> optional deps install -> run `pdf_loader.py`.
 #
 # Default usage:
 #   bash run_phase1.sh
@@ -24,9 +18,9 @@ set -o pipefail
 #   bash run_phase1.sh data outputs
 #
 # Parameters:
-#   --install-deps = pip install -r requirements.txt run karega (optional)
-#   $1 = input path (PDF/TXT file ya folder) [default: data/pdfs]
-#   $2 = output path [default: outputs]
+#   --install-deps  Install dependencies from requirements.txt
+#   $1              Input file/folder (default: data/pdfs)
+#   $2              Output folder (default: outputs)
 
 INSTALL_DEPS=false
 
@@ -45,8 +39,7 @@ done
 INPUT_PATH="${1:-data/pdfs}"
 OUTPUT_PATH="${2:-outputs}"
 
-# Default `data/pdfs` backward-compatible rakha gaya hai.
-# Agar mixed input (PDF + TXT) ho to input path `data` pass karein.
+# For mixed input (PDF + TXT), pass `data` as input path.
 
 if [[ -d ".venv" ]]; then
   echo "[INFO] Activating virtual environment (.venv)"
@@ -58,7 +51,7 @@ fi
 
 if [[ "$INSTALL_DEPS" == "true" ]]; then
   echo "[INFO] Installing dependencies from requirements.txt"
-  # Reproducible setup: same dependency list se environment align hota hai.
+  # Keep environment reproducible.
   pip install --no-cache-dir -r requirements.txt
 else
   echo "[INFO] Skipping dependency install (already installed assumed)."
@@ -66,8 +59,7 @@ else
 fi
 
 echo "[INFO] Running Phase 1 PDF loader"
-# Python script extension-based routing karta hai:
-# PDF -> page-wise extract, TXT -> direct read.
+# Extraction routing is handled inside the Python script.
 python scripts/pdf_loader.py --input "$INPUT_PATH" --output "$OUTPUT_PATH"
 
 echo "[DONE] Phase 1 extraction complete."

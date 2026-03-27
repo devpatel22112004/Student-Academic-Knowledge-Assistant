@@ -5,15 +5,9 @@ set -o pipefail
 # =====================================================
 # Phase 2 Direct Runner (Document Processing Pipeline)
 # =====================================================
-# Is script ko direct run karke aap Phase 2 indexing kar sakte ho.
-# Short: Text ko searchable vectors me convert karta hai.
-# Concept: Ye retrieval backbone banata hai - yahi data later semantic
-# question answering me nearest relevant context return karta hai.
-# Ye script ye steps karta hai:
-# 1) Virtual environment activate karta hai (agar .venv present ho)
-# 2) (Optional) Required packages install/update karta hai
-# 3) document_pipeline.py run karta hai
-# 4) Default me clean output ke liye quiet mode use hota hai
+# Purpose: Run Phase 2 indexing in one command.
+# Flow: activate env -> optional deps install -> run `document_pipeline.py`.
+# Default mode keeps logs clean; `--verbose` keeps full logs.
 #
 # Default usage:
 #   bash run_phase2.sh
@@ -28,14 +22,14 @@ set -o pipefail
 #   bash run_phase2.sh --install-deps data/pdfs outputs/vector_store 600 100 sentence-transformers/all-MiniLM-L6-v2
 #
 # Parameters:
-#   --install-deps = pip install -r requirements.txt run karega (optional)
-#   --verbose      = extra logs/warnings dekhna ho to
-#   --show-progress= embedding progress bar dekhna ho to
-#   $1 = input path (PDF/TXT file ya folder) [default: data/pdfs]
-#   $2 = output path [default: outputs/vector_store]
-#   $3 = chunk size [default: 600]
-#   $4 = chunk overlap [default: 100]
-#   $5 = embedding model [default: sentence-transformers/all-MiniLM-L6-v2]
+#   --install-deps   Install dependencies from requirements.txt
+#   --verbose        Show detailed logs
+#   --show-progress  Show embedding progress bar
+#   $1               Input file/folder (default: data/pdfs)
+#   $2               Output folder (default: outputs/vector_store)
+#   $3               Chunk size (default: 600)
+#   $4               Chunk overlap (default: 100)
+#   $5               Embedding model name
 
 INSTALL_DEPS=false
 VERBOSE=false
@@ -67,9 +61,9 @@ CHUNK_SIZE="${3:-600}"
 CHUNK_OVERLAP="${4:-100}"
 MODEL_NAME="${5:-sentence-transformers/all-MiniLM-L6-v2}"
 
-# Chunking defaults trade-off:
-# - chunk size bada -> context richer, but granularity coarse.
-# - overlap bada -> continuity better, but duplicate tokens increase.
+# Chunking trade-off:
+# - Larger chunk size keeps more context.
+# - Larger overlap improves continuity.
 
 if [[ -d ".venv" ]]; then
   echo "[INFO] Activating virtual environment (.venv)"
@@ -81,12 +75,12 @@ fi
 
 if [[ "$INSTALL_DEPS" == "true" ]]; then
   echo "[INFO] Installing dependencies from requirements.txt"
-  # Dependency sync ensures local run and CI behavior consistent rahe.
+  # Keep environment reproducible.
   pip install --no-cache-dir -r requirements.txt
 else
   echo "[INFO] Skipping dependency install (already installed assumed)."
   echo "[INFO] If needed, run: bash run_phase2.sh --install-deps"
-  # Manual fallback command (sirf issue aaye tab):
+  # Manual fallback:
   # pip install -r requirements.txt
 fi
 
@@ -107,13 +101,10 @@ if [[ "$SHOW_PROGRESS" == "true" ]]; then
 fi
 
 if [[ "$VERBOSE" == "true" ]]; then
-  # Verbose mode debugging/troubleshooting ke liye best hai.
+  # Print full runtime logs.
   "${CMD[@]}"
 else
-  # Quiet mode me sirf known harmless noise hide karte hain:
-  # - HF unauthenticated warning (token na ho tab aata hai)
-  # - model loading progress/report lines
-  # Real errors/traceback filter nahi kiye jaate.
+  # Hide known noisy lines while keeping real errors visible.
   "${CMD[@]}" 2>&1 \
     | grep -vF 'Warning: You are sending unauthenticated requests to the HF Hub' \
     | grep -vF 'Loading weights:' \

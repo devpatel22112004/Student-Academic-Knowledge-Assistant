@@ -1,35 +1,17 @@
 #!/usr/bin/env python3
 
 """
-PHASE 2 — Document Processing Pipeline (PDF + TXT Support)
+Phase 2 pipeline: discover documents, create chunks, generate embeddings,
+build FAISS index, and save metadata artifacts.
 
-क्या करता है:
-1) Documents discover (PDF + TXT दोनों)
-2) Text extract (PDF: pypdf, TXT: native Python)
-3) Split into semantic chunks
-4) Generate dense embeddings
-5) Build FAISS vector index
-6) Save metadata + vector info
+Core inputs: PDF/TXT files
+Core outputs: index.faiss, metadata.json, vectors_shape.json
 
-Dependencies:
-REQUIRED: pypdf, langchain-text-splitters, sentence-transformers, faiss-cpu, numpy
-ADDITIONAL (हमने): pytesseract, pdf2image (OCR के लिए)
-NOT NEEDED FOR TXT: TXT extraction के लिए कोई extra library नहीं
-
-Usage: bash run_phase2.sh data outputs/vector_store
-Output: Unified vector_store में FAISS index + metadata + shapes
-
-Key Insight:
-- PDF: page-based processing (page 1, page 2, ...)
-- TXT: block-based processing (सब content as pseudo-page 1)
-- Final output: दोनों के लिए same metadata format!
+Note: OCR support is optional and implemented in the ADDITIONAL section at
+the end of this file.
 """
 
 from __future__ import annotations
-
-# Phase 2 — Document Processing Pipeline
-# Kaam: PDF/TXT documents ko chunk karo, embeddings banao, aur FAISS vector DB me store karo.
-# Ye script indexing step complete karta hai jo retrieval ke liye base banata hai.
 
 import argparse
 import json
@@ -38,36 +20,16 @@ import os
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-# FAISS: fast vector search index ke liye
 import faiss
-# NumPy: embeddings ko float32 matrix me convert/store karne ke liye
 import numpy as np
-# pypdf: PDF se text read karne ke liye
 from pypdf import PdfReader
-# sentence-transformers: text -> embedding vector conversion
 from sentence_transformers import SentenceTransformer
-
-# Text splitter ke liye dedicated lightweight package use kar rahe hain.
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-
-# ===== ADDITIONAL (NOT REQUIRED): OCR Fallback for Scanned PDFs =====
-# Ye section humne add kiya hai — original project me required nahi tha.
-# Scanned/image-based PDFs ke liye automatic OCR fallback provide karta hai.
-# Design choice: import failures ko soft-fail karte hain taaki text-based
-# PDF/TXT pipeline OCR dependency ke bina bhi run hoti rahe.
-try:
-    from pdf2image import convert_from_path
-    import pytesseract
-except Exception:
-    convert_from_path = None
-    pytesseract = None
-# =======================================================================
 
 
 @dataclass
 class ChunkRecord:
-    # Har chunk ke saath yeh metadata store hoga.
-    # Isse baad me answer ka source page/file trace kar paoge.
+    # Metadata saved for each chunk.
     chunk_id: int
     source_file: str
     page_number: int
@@ -75,44 +37,17 @@ class ChunkRecord:
 
 
 def discover_documents(input_path: Path) -> list[Path]:
-    # Short: Input documents discover karo.
-    # Concept: Same discovery rule (PDF+TXT) Phase 1/Phase 2 consistency rakhta hai,
-    # jisse run modes (single file/folder) predictable ban jate hain.
-    # Agar input direct supported file hai to usko list me return karo.
+    # Discover supported input files.
     if input_path.is_file() and input_path.suffix.lower() in {".pdf", ".txt"}:
         return [input_path]
-    # Agar input folder hai to us folder (aur subfolders) me sab PDFs/TXTs dhundo.
+
+    # Support recursive folder ingestion.
     if input_path.is_dir():
         pdf_files = list(input_path.rglob("*.pdf"))
         txt_files = list(input_path.rglob("*.txt"))
         return sorted(pdf_files + txt_files)
-    # Invalid path case me empty list return.
+
     return []
-
-
-# ADDITIONAL (NOT REQUIRED): OCR Fallback Function
-# Humne ye function add kiya hai scanned PDFs handle karne ke liye.
-def run_ocr_on_page(pdf_path: Path, page_number: int, ocr_dpi: int, ocr_lang: str) -> str:
-    """ADDITIONAL: Extract text from scanned PDF page using Tesseract OCR."""
-    # OCR libs missing hon to gracefully empty text return karo.
-    if convert_from_path is None or pytesseract is None:
-        return ""
-
-    try:
-        page_images = convert_from_path(
-            str(pdf_path),
-            dpi=ocr_dpi,
-            first_page=page_number,
-            last_page=page_number,
-            fmt="png",
-        )
-        if not page_images:
-            return ""
-
-        ocr_text = (pytesseract.image_to_string(page_images[0], lang=ocr_lang) or "").strip()
-        return ocr_text
-    except Exception:
-        return ""
 
 
 def load_pdf_pages(
@@ -121,16 +56,15 @@ def load_pdf_pages(
     ocr_dpi: int,
     ocr_lang: str,
 ) -> list[tuple[int, str]]:
-    # Short: PDF ko page tuples me convert karo.
-    # Concept: Per-page tuples metadata traceability improve karte hain
-    # (source_file + page_number => stronger citation quality).
+    # Load PDF content as (page_number, text) tuples.
     reader = PdfReader(str(pdf_path))
     pages: list[tuple[int, str]] = []
 
     for page_number, page in enumerate(reader.pages, start=1):
-        # Empty page text ko skip karne ke liye strip + check.
+        # Use direct text extraction first.
         page_text = (page.extract_text() or "").strip()
-        # ADDITIONAL (NOT REQUIRED): OCR fallback for pages without selectable text
+
+        # ADDITIONAL: OCR fallback for scanned pages.
         if not page_text and use_ocr_fallback:
             page_text = run_ocr_on_page(
                 pdf_path=pdf_path,
@@ -138,6 +72,7 @@ def load_pdf_pages(
                 ocr_dpi=ocr_dpi,
                 ocr_lang=ocr_lang,
             )
+
         if page_text:
             pages.append((page_number, page_text))
 
@@ -145,10 +80,7 @@ def load_pdf_pages(
 
 
 def load_txt_pages(txt_path: Path) -> list[tuple[int, str]]:
-    # Short: TXT ko pseudo-page model me map karo.
-    # Concept: Uniform schema (page_number + text) se chunking code shared rehta hai,
-    # alag pipeline branches maintain nahi karni padti.
-    # TXT ke liye ek pseudo page (1) treat karte hain.
+    # Map TXT into pseudo-page format for shared chunking logic.
     txt_content = txt_path.read_text(encoding="utf-8").strip()
     if not txt_content:
         return []
@@ -163,9 +95,7 @@ def chunk_documents(
     ocr_dpi: int,
     ocr_lang: str,
 ) -> list[ChunkRecord]:
-    # Short: Text ko model-friendly segments me split karo.
-    # Concept: chunk_size retrieval granularity control karta hai,
-    # chunk_overlap local context continuity preserve karta hai.
+    # Split text into retrieval-ready chunks.
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
@@ -175,8 +105,7 @@ def chunk_documents(
     chunk_records: list[ChunkRecord] = []
     chunk_id = 0
 
-    # Har document -> page/text block -> multiple chunks.
-    # Yahi stage retrieval quality ka core driver hai.
+    # Process each document into chunk records.
     for source_file in document_files:
         if source_file.suffix.lower() == ".pdf":
             page_entries = load_pdf_pages(
@@ -195,7 +124,7 @@ def chunk_documents(
                 if not normalized_text:
                     continue
 
-                # Chunk ke saath source metadata save karte hain.
+                # Preserve source info for traceability.
                 chunk_records.append(
                     ChunkRecord(
                         chunk_id=chunk_id,
@@ -210,7 +139,7 @@ def chunk_documents(
 
 
 def create_embeddings(chunks: list[ChunkRecord], model_name: str, show_progress: bool) -> np.ndarray:
-    # Agar chunking se kuch output hi nahi aaya to indexing possible nahi.
+    # Guard against empty chunk list.
     if not chunks:
         raise ValueError(
             "No chunks were created. Input files may be empty or non-extractable. "
@@ -218,19 +147,17 @@ def create_embeddings(chunks: list[ChunkRecord], model_name: str, show_progress:
             "or provide valid text-based PDF/TXT files."
         )
 
-    # Embedding model load karo (default: all-MiniLM-L6-v2).
-    # Concept: Dense vectors semantic similarity compare karne ke liye use hote hain,
-    # exact keyword match se better retrieval milta hai.
+    # Convert chunk text to dense vectors.
     model = SentenceTransformer(model_name)
-    # Sirf text list pass karte hain embedding generation ke liye.
     texts = [chunk.text for chunk in chunks]
     vectors = model.encode(texts, show_progress_bar=show_progress, convert_to_numpy=True)
-    # FAISS ke liye float32 recommended format.
+
+    # Keep FAISS-compatible dtype.
     return np.asarray(vectors, dtype=np.float32)
 
 
 def configure_runtime_logs(verbose: bool) -> None:
-    # Quiet mode: unnecessary terminal warnings/info ko suppress karta hai.
+    # Keep default CLI output clean unless verbose mode is requested.
     if verbose:
         return
 
@@ -257,32 +184,27 @@ def configure_runtime_logs(verbose: bool) -> None:
 
 
 def build_faiss_index(vectors: np.ndarray) -> faiss.IndexFlatL2:
-    # Short: FAISS index initialize karo.
-    # Concept: IndexFlatL2 brute-force nearest-neighbor use karta hai;
-    # small/medium datasets me simple aur reliable baseline hota hai.
-    # Embedding dimension detect karke L2 distance index banate hain.
+    # Build an L2 FAISS index from embedding matrix.
     embedding_dimension = vectors.shape[1]
     index = faiss.IndexFlatL2(embedding_dimension)
-    # Saare vectors index me add karo.
     index.add(vectors)
     return index
 
 
 def save_artifacts(output_dir: Path, index: faiss.IndexFlatL2, chunks: list[ChunkRecord], vectors: np.ndarray) -> None:
-    # Output folder create/ensure.
+    # Ensure output folder exists.
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # 1) Vector index save (binary FAISS format)
+    # 1) Persist FAISS index.
     faiss.write_index(index, str(output_dir / "index.faiss"))
 
-    # 2) Metadata save (chunk-level traceability)
-    # Concept: Retrieval result me chunk text ke saath source explain karna possible hota hai.
+    # 2) Persist chunk metadata.
     (output_dir / "metadata.json").write_text(
         json.dumps([asdict(chunk) for chunk in chunks], ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
 
-    # 3) Quick summary save (sanity check + monitoring ke liye)
+    # 3) Persist vector shape summary.
     (output_dir / "vectors_shape.json").write_text(
         json.dumps(
             {
@@ -296,22 +218,26 @@ def save_artifacts(output_dir: Path, index: faiss.IndexFlatL2, chunks: list[Chun
 
 
 def parse_args() -> argparse.Namespace:
-    # CLI arguments define karte hain taki script reusable ho.
+    # Parse runtime options.
     parser = argparse.ArgumentParser(
         description="Phase 2 pipeline: chunk text, generate embeddings, and index in FAISS."
     )
-    # Input: single document file ya directory.
+
+    # Required input path.
     parser.add_argument("--input", required=True, help="PDF/TXT file path or directory containing documents.")
-    # Output: index + metadata kaha save karna hai.
+
+    # Output artifact folder.
     parser.add_argument(
         "--output",
         default="outputs/vector_store",
         help="Output folder where index and metadata files are saved.",
     )
-    # Chunk tuning params.
+
+    # Chunking controls.
     parser.add_argument("--chunk-size", type=int, default=600, help="Max characters per chunk.")
     parser.add_argument("--chunk-overlap", type=int, default=100, help="Overlap characters between chunks.")
-    # Embedding model selection.
+
+    # Embedding model.
     parser.add_argument(
         "--model",
         default="sentence-transformers/all-MiniLM-L6-v2",
@@ -327,7 +253,8 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Embedding progress bar dikhana ho to use karein.",
     )
-    # ADDITIONAL (NOT REQUIRED): OCR-related CLI arguments added by us
+
+    # ADDITIONAL (OCR): Optional fallback controls.
     parser.add_argument(
         "--disable-ocr-fallback",
         action="store_true",
@@ -348,23 +275,23 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
-    # 1) Args parse
+    # Parse args.
     args = parse_args()
 
-    # 1.1) Runtime log behavior set karo (default: quiet/clean output)
+    # Configure logging.
     configure_runtime_logs(verbose=args.verbose)
 
     input_path = Path(args.input)
     output_dir = Path(args.output)
 
-    # 2) Input document discovery
+    # Discover input documents.
     document_files = discover_documents(input_path)
     if not document_files:
         raise FileNotFoundError(f"No supported file (.pdf/.txt) found at: {input_path}")
 
     print(f"Found {len(document_files)} document file(s).")
 
-    # 3) Chunking
+    # Create chunks.
     chunks = chunk_documents(
         document_files=document_files,
         chunk_size=args.chunk_size,
@@ -375,7 +302,7 @@ def main() -> None:
     )
     print(f"Created {len(chunks)} chunk(s).")
 
-    # 4) Embedding generation
+    # Generate embeddings.
     vectors = create_embeddings(
         chunks=chunks,
         model_name=args.model,
@@ -383,13 +310,55 @@ def main() -> None:
     )
     print(f"Generated embeddings with shape: {vectors.shape}")
 
-    # 5) Index build + artifact save
+    # Build index and save artifacts.
     index = build_faiss_index(vectors=vectors)
     save_artifacts(output_dir=output_dir, index=index, chunks=chunks, vectors=vectors)
 
     print(f"Indexing completed. Artifacts saved in: {output_dir}")
 
 
+# ---------------------------------------------------------------------------
+# ADDITIONAL OCR SECTION (OPTIONAL)
+#
+# Why this exists:
+# - Some PDFs are scanned images and return empty text via pypdf.
+# - OCR converts that page image into machine-readable text.
+#
+# How it works:
+# 1) Render one PDF page to image using pdf2image.
+# 2) Read image text using pytesseract.
+# 3) Return extracted text to page loader fallback path.
+#
+# Required extras for OCR:
+# - Python packages: pytesseract, pdf2image, Pillow
+# - System packages: tesseract-ocr, poppler-utils
+# ---------------------------------------------------------------------------
+def run_ocr_on_page(pdf_path: Path, page_number: int, ocr_dpi: int, ocr_lang: str) -> str:
+    """[ADDITIONAL] OCR fallback for a single PDF page."""
+    try:
+        import importlib
+
+        pdf2image_module = importlib.import_module("pdf2image")
+        pytesseract_module = importlib.import_module("pytesseract")
+        convert_from_path = pdf2image_module.convert_from_path
+    except Exception:
+        return ""
+
+    try:
+        page_images = convert_from_path(
+            str(pdf_path),
+            dpi=ocr_dpi,
+            first_page=page_number,
+            last_page=page_number,
+            fmt="png",
+        )
+        if not page_images:
+            return ""
+
+        return (pytesseract_module.image_to_string(page_images[0], lang=ocr_lang) or "").strip()
+    except Exception:
+        return ""
+
+
 if __name__ == "__main__":
-    # Script entry point
     main()

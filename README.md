@@ -18,7 +18,9 @@ pip install -r requirements.txt
 bash run_phase1.sh data outputs
 bash run_phase2.sh data outputs/vector_store
 
-# Query your documents (Phase 3 - coming soon)
+# Phase 3: Retrieval
+bash run_phase3.sh query --query "What is Tesla?" --top-k 3
+bash run_phase3.sh eval --top-k 5 --sample-size 20
 ```
 
 ---
@@ -44,7 +46,8 @@ Student-Academic-Knowledge-Assistant/
 │
 ├── scripts/
 │   ├── pdf_loader.py           # Phase 1: Document extraction (PDF + TXT)
-│   └── document_pipeline.py     # Phase 2: Chunking + embedding + indexing
+│   ├── document_pipeline.py     # Phase 2: Chunking + embedding + indexing
+│   └── retrieval_system.py      # Phase 3: Similarity search + evaluation
 │
 ├── outputs/
 │   ├── phase1_extracted/       # Phase 1 output (extracted text)
@@ -52,6 +55,7 @@ Student-Academic-Knowledge-Assistant/
 │
 ├── run_phase1.sh               # Phase 1 convenient runner
 ├── run_phase2.sh               # Phase 2 convenient runner
+├── run_phase3.sh               # Phase 3 convenient runner
 ├── requirements.txt            # Dependencies
 ├── README.md                   # This file (quick start)
 └── DOCUMENTATION.md            # Detailed technical guide

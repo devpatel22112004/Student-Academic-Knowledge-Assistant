@@ -19,7 +19,7 @@ set -o pipefail
 #
 # Parameters:
 #   --install-deps  Install dependencies from requirements.txt
-#   $1              Input file/folder (default: data/pdfs)
+#   $1              Input file/folder (default: data)
 #   $2              Output folder (default: outputs)
 
 INSTALL_DEPS=false
@@ -36,10 +36,10 @@ while [[ "$#" -gt 0 ]]; do
   esac
 done
 
-INPUT_PATH="${1:-data/pdfs}"
+INPUT_PATH="${1:-data}"
 OUTPUT_PATH="${2:-outputs}"
 
-# For mixed input (PDF + TXT), pass `data` as input path.
+# Default input is `data` so both `data/tesla.txt` and `data/pdfs/*.pdf` work.
 
 if [[ -d ".venv" ]]; then
   echo "[INFO] Activating virtual environment (.venv)"

@@ -147,7 +147,7 @@ def load_rtf_pages(rtf_path: Path) -> list[tuple[int, str]]:
     # Read raw RTF content.
     raw = rtf_path.read_text(encoding="utf-8", errors="ignore")
     # Convert markup to plain text.
-    text = convert_rtf(raw).strip()
+    text = convert_rtf(raw).replace("\x00", "").strip()
     # Return empty if no text extracted.
     if not text:
         return []
@@ -229,6 +229,8 @@ def chunk_documents(
             for chunk_text in chunks:
                 # Trim whitespace-only chunks.
                 normalized_text = chunk_text.strip()
+                # Remove accidental null bytes from source text.
+                normalized_text = normalized_text.replace("\x00", "")
                 if not normalized_text:
                     continue
 

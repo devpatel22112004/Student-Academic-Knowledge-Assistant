@@ -80,7 +80,8 @@ def extract_rtf_text(rtf_path: Path) -> str:
     # Read raw RTF content.
     raw = rtf_path.read_text(encoding="utf-8", errors="ignore")
     # Convert RTF markup to plain text.
-    return convert_rtf(raw).strip()
+    # Remove null bytes that may appear in some RTF exports.
+    return convert_rtf(raw).replace("\x00", "").strip()
 
 
 def extract_doc_text(doc_path: Path) -> str:

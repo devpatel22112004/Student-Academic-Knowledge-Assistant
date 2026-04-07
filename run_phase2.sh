@@ -25,7 +25,7 @@ set -o pipefail
 #   --install-deps   Install dependencies from requirements.txt
 #   --verbose        Show detailed logs
 #   --show-progress  Show embedding progress bar
-#   $1               Input file/folder (default: data/pdfs)
+#   $1               Input file/folder (default: data)
 #   $2               Output folder (default: outputs/vector_store)
 #   $3               Chunk size (default: 600)
 #   $4               Chunk overlap (default: 100)
@@ -55,7 +55,7 @@ while [[ "$#" -gt 0 ]]; do
   esac
 done
 
-INPUT_PATH="${1:-data/pdfs}"
+INPUT_PATH="${1:-data}"
 OUTPUT_PATH="${2:-outputs/vector_store}"
 CHUNK_SIZE="${3:-600}"
 CHUNK_OVERLAP="${4:-100}"

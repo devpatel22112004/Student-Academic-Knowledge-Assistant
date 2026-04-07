@@ -14,9 +14,12 @@ the end of this file.
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 import logging
 import os
+import shutil
+import subprocess
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -38,14 +41,16 @@ class ChunkRecord:
 
 def discover_documents(input_path: Path) -> list[Path]:
     # Discover supported input files.
-    if input_path.is_file() and input_path.suffix.lower() in {".pdf", ".txt"}:
+    supported = {".pdf", ".txt", ".rtf", ".doc", ".docx"}
+    if input_path.is_file() and input_path.suffix.lower() in supported:
         return [input_path]
 
     # Support recursive folder ingestion.
     if input_path.is_dir():
-        pdf_files = list(input_path.rglob("*.pdf"))
-        txt_files = list(input_path.rglob("*.txt"))
-        return sorted(pdf_files + txt_files)
+        matched: list[Path] = []
+        for ext in supported:
+            matched.extend(input_path.rglob(f"*{ext}"))
+        return sorted(matched)
 
     return []
 
@@ -87,6 +92,55 @@ def load_txt_pages(txt_path: Path) -> list[tuple[int, str]]:
     return [(1, txt_content)]
 
 
+def load_docx_pages(docx_path: Path) -> list[tuple[int, str]]:
+    # Map DOCX to pseudo-page format.
+    try:
+        docx_module = importlib.import_module("docx")
+        docx_document = docx_module.Document
+    except Exception:
+        raise RuntimeError("DOCX support missing. Install dependency: python-docx")
+
+    doc = docx_document(str(docx_path))
+    text = "\n".join(p.text.strip() for p in doc.paragraphs if p.text and p.text.strip()).strip()
+    if not text:
+        return []
+    return [(1, text)]
+
+
+def load_rtf_pages(rtf_path: Path) -> list[tuple[int, str]]:
+    # Map RTF to pseudo-page format.
+    try:
+        striprtf_module = importlib.import_module("striprtf.striprtf")
+        convert_rtf = striprtf_module.rtf_to_text
+    except Exception:
+        raise RuntimeError("RTF support missing. Install dependency: striprtf")
+
+    raw = rtf_path.read_text(encoding="utf-8", errors="ignore")
+    text = convert_rtf(raw).strip()
+    if not text:
+        return []
+    return [(1, text)]
+
+
+def load_doc_pages(doc_path: Path) -> list[tuple[int, str]]:
+    # Map legacy DOC to pseudo-page format using antiword.
+    if shutil.which("antiword") is None:
+        raise RuntimeError(
+            "DOC support needs system tool 'antiword'. Install with: sudo apt-get install -y antiword"
+        )
+
+    result = subprocess.run(
+        ["antiword", str(doc_path)],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    text = (result.stdout or "").strip()
+    if not text:
+        return []
+    return [(1, text)]
+
+
 def chunk_documents(
     document_files: list[Path],
     chunk_size: int,
@@ -107,15 +161,22 @@ def chunk_documents(
 
     # Process each document into chunk records.
     for source_file in document_files:
-        if source_file.suffix.lower() == ".pdf":
+        suffix = source_file.suffix.lower()
+        if suffix == ".pdf":
             page_entries = load_pdf_pages(
                 pdf_path=source_file,
                 use_ocr_fallback=use_ocr_fallback,
                 ocr_dpi=ocr_dpi,
                 ocr_lang=ocr_lang,
             )
-        else:
+        elif suffix == ".txt":
             page_entries = load_txt_pages(source_file)
+        elif suffix == ".docx":
+            page_entries = load_docx_pages(source_file)
+        elif suffix == ".rtf":
+            page_entries = load_rtf_pages(source_file)
+        else:
+            page_entries = load_doc_pages(source_file)
 
         for page_number, page_text in page_entries:
             chunks = splitter.split_text(page_text)
@@ -224,7 +285,11 @@ def parse_args() -> argparse.Namespace:
     )
 
     # Required input path.
-    parser.add_argument("--input", required=True, help="PDF/TXT file path or directory containing documents.")
+    parser.add_argument(
+        "--input",
+        required=True,
+        help="PDF/TXT/RTF/DOC/DOCX file path or directory containing documents.",
+    )
 
     # Output artifact folder.
     parser.add_argument(
@@ -287,7 +352,9 @@ def main() -> None:
     # Discover input documents.
     document_files = discover_documents(input_path)
     if not document_files:
-        raise FileNotFoundError(f"No supported file (.pdf/.txt) found at: {input_path}")
+        raise FileNotFoundError(
+            f"No supported file (.pdf/.txt/.rtf/.doc/.docx) found at: {input_path}"
+        )
 
     print(f"Found {len(document_files)} document file(s).")
 

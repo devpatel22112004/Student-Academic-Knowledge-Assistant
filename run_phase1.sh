@@ -3,7 +3,7 @@ set -e
 set -o pipefail
 
 # ==============================================
-# Phase 1 Direct Runner (PDF/TXT Text Extraction)
+# Phase 1 Direct Runner (PDF/TXT/RTF/DOC/DOCX Text Extraction)
 # ==============================================
 # Purpose: Run Phase 1 extraction in a consistent way.
 # Flow: activate env -> optional deps install -> run `pdf_loader.py`.
@@ -39,7 +39,8 @@ done
 INPUT_PATH="${1:-data}"
 OUTPUT_PATH="${2:-outputs}"
 
-# Default input is `data` so both `data/tesla.txt` and `data/pdfs/*.pdf` work.
+# Default input is `data` so root + subfolder documents are discovered.
+# NOTE: `.doc` support requires system tool `antiword`.
 
 if [[ -d ".venv" ]]; then
   echo "[INFO] Activating virtual environment (.venv)"

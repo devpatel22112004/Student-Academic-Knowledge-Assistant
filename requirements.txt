@@ -5,6 +5,8 @@ faiss-cpu
 sentence-transformers
 pypdf
 numpy
+python-docx
+striprtf
 
 # ===== ADDITIONAL (OCR Fallback - Our Enhancement) =====
 # Optional OCR support for scanned PDFs.

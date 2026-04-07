@@ -155,7 +155,7 @@ def parse_args() -> argparse.Namespace:
     # Optional output directory argument.
     parser.add_argument(
         "--output",
-        default="outputs",
+        default="outputs/extracted",
         help="Destination folder for extracted .txt files.",
     )
     # Return parsed CLI values.

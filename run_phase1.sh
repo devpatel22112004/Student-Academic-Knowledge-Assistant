@@ -15,12 +15,12 @@ set -o pipefail
 #   bash run_phase1.sh --install-deps
 #
 # Custom usage:
-#   bash run_phase1.sh data outputs
+#   bash run_phase1.sh data outputs/extracted
 #
 # Parameters:
 #   --install-deps  Install dependencies from requirements.txt
 #   $1              Input file/folder (default: data)
-#   $2              Output folder (default: outputs)
+#   $2              Output folder (default: outputs/extracted)
 
 INSTALL_DEPS=false
 
@@ -37,7 +37,7 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 INPUT_PATH="${1:-data}"
-OUTPUT_PATH="${2:-outputs}"
+OUTPUT_PATH="${2:-outputs/extracted}"
 
 # Default input is `data` so root + subfolder documents are discovered.
 # NOTE: `.doc` support requires system tool `antiword`.

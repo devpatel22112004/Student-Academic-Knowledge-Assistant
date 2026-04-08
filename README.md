@@ -1,318 +1,354 @@
 # Student Academic Knowledge Assistant (RAG-Based AI System)
 
-This project is an AI-powered academic assistant that helps students interact with their study materials (PDFs and TXT files).
+This project is a Retrieval Augmented Generation (RAG) foundation system for academic content.
+It helps process study documents and retrieve relevant context for user questions.
 
-The system allows users to upload documents and ask questions about them, generating answers using Retrieval Augmented Generation (RAG) with source citations.
+Current completed scope:
+- Phase 1: Document loading and text extraction
+- Phase 2: Chunking, embeddings, and vector indexing
+- Phase 3: Retrieval and retrieval-quality evaluation
 
 ---
 
-## Quick Start
+## 1. Project Goal (0-Level Explanation)
+
+The project solves this problem:
+- Students have many notes and files
+- They want fast, relevant answers from their own material
+- Generic chatbot answers may be incorrect or unrelated
+
+So this system does the following:
+1. Read academic documents
+2. Convert document text into searchable vector format
+3. Retrieve top relevant chunks for a user query
+4. (Next phases) use retrieved chunks with an LLM for final answer generation
+
+Important architecture point:
+- Answers must come from uploaded documents, not random internet text
+
+---
+
+## 2. What Is Completed So Far
+
+### Phase 1 (Completed)
+
+Module:
+- [scripts/pdf_loader.py](scripts/pdf_loader.py)
+
+Runner:
+- [run_phase1.sh](run_phase1.sh)
+
+What it does:
+1. Scans input path for supported files
+2. Extracts text per format
+3. Saves normalized text output in extracted folder
+
+Supported formats in Phase 1:
+- PDF
+- TXT
+- RTF
+- DOCX
+- DOC
+
+Output default:
+- [outputs/extracted](outputs/extracted)
+
+---
+
+### Phase 2 (Completed)
+
+Module:
+- [scripts/document_pipeline.py](scripts/document_pipeline.py)
+
+Runner:
+- [run_phase2.sh](run_phase2.sh)
+
+What it does:
+1. Reads supported documents
+2. Splits text into chunks with overlap
+3. Generates embeddings using sentence-transformers
+4. Stores vectors in FAISS
+5. Saves metadata and vector shape info
+
+Output default:
+- [outputs/vector_store](outputs/vector_store)
+
+Main output artifacts:
+1. [outputs/vector_store/index.faiss](outputs/vector_store/index.faiss)
+2. [outputs/vector_store/metadata.json](outputs/vector_store/metadata.json)
+3. [outputs/vector_store/vectors_shape.json](outputs/vector_store/vectors_shape.json)
+
+---
+
+### Phase 3 (Completed)
+
+Module:
+- [scripts/retrieval_system.py](scripts/retrieval_system.py)
+
+Runner:
+- [run_phase3.sh](run_phase3.sh)
+
+Modes:
+1. Query mode
+- Semantic retrieval for real user query
+- Returns top-k relevant chunks
+
+2. Eval mode
+- Retrieval quality metrics
+- Outputs exact_hit_rate, source_hit_rate, mrr
+
+---
+
+## 3. Additional Enhancements Added Beyond Basic Scope
+
+These are enhancements added during development:
+
+1. OCR fallback for scanned PDF pages
+- Implemented in [scripts/document_pipeline.py](scripts/document_pipeline.py)
+- Used when PDF text extraction returns empty text for image-based pages
+
+2. Extended document format support
+- Added support for RTF, DOCX, DOC (in addition to PDF/TXT)
+- Implemented in both:
+  - [scripts/pdf_loader.py](scripts/pdf_loader.py)
+  - [scripts/document_pipeline.py](scripts/document_pipeline.py)
+
+3. Better output alignment
+- Phase 1 default output aligned to [outputs/extracted](outputs/extracted)
+
+4. Cleaner comments and readability improvements
+- Line-by-line simple comments added in core scripts and runners
+
+5. Null character sanitization
+- Fixed hidden null byte issue from some RTF extraction paths
+
+---
+
+## 4. Full Folder Structure
+
+Current practical structure:
+
+```text
+Student-Academic-Knowledge-Assistant/
+├── data/
+│   ├── pdfs/                     # Optional nested PDF folder
+│   ├── cskinfo.rtf               # Example input
+│   ├── mumbaiindiansinfo.txt     # Example input
+│   └── rcbinfo.pdf               # Example input
+│
+├── scripts/
+│   ├── pdf_loader.py             # Phase 1 extraction module
+│   ├── document_pipeline.py      # Phase 2 indexing module
+│   └── retrieval_system.py       # Phase 3 retrieval module
+│
+├── outputs/
+│   ├── extracted/                # Phase 1 output text files
+│   │   ├── cskinfo.txt
+│   │   ├── mumbaiindiansinfo.txt
+│   │   └── rcbinfo.txt
+│   │
+│   └── vector_store/             # Phase 2 output artifacts
+│       ├── index.faiss
+│       ├── metadata.json
+│       └── vectors_shape.json
+│
+├── run_phase1.sh                 # Phase 1 runner
+├── run_phase2.sh                 # Phase 2 runner
+├── run_phase3.sh                 # Phase 3 runner
+├── run_unified.sh                # Unified Phase 1 + 2 runner
+├── requirements.txt              # Project dependencies
+├── README.md                     # This file
+└── DOCUMENTATION.md              # Extended technical notes
+```
+
+---
+
+## 5. Dependency Explanation (Why Each Package Is Installed)
+
+See [requirements.txt](requirements.txt) for package list.
+
+Core packages:
+1. langchain-text-splitters
+- Chunking with size and overlap
+
+2. faiss-cpu
+- Vector indexing and similarity search
+
+3. sentence-transformers
+- Text to embedding conversion
+
+4. pypdf
+- PDF text extraction
+
+5. numpy
+- Embedding matrix handling
+
+6. python-docx
+- DOCX text extraction
+
+7. striprtf
+- RTF to plain-text conversion
+
+Additional OCR packages:
+1. pytesseract
+- OCR engine bridge
+
+2. pdf2image
+- Convert PDF pages to images for OCR
+
+3. Pillow
+- Image handling dependency
+
+System tools needed for full support:
+1. antiword (for DOC)
+2. tesseract-ocr (for OCR)
+3. poppler-utils (for OCR rendering)
+
+---
+
+## 6. Setup and Run Commands
+
+### One-time setup
 
 ```bash
-# Setup (one-time)
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-
-# Run everything (PDF + TXT support)
-bash run_phase1.sh data outputs
-bash run_phase2.sh data outputs/vector_store
-
-# Phase 3: Retrieval
-bash run_phase3.sh query --query "What is Tesla?" --top-k 3
-bash run_phase3.sh eval --top-k 5 --sample-size 20
 ```
 
----
-
-## Full Documentation
-
-**See [DOCUMENTATION.md](DOCUMENTATION.md) for complete details:**
-- Architecture and data flow
-- Dependency explanation (including why TXT needs NO extra libraries)
-- Code structure with examples
-- All use cases and troubleshooting
-
----
-
-## Files Structure
-
-```
-Student-Academic-Knowledge-Assistant/
-├── data/                       # Place your PDFs and TXT files here
-│   ├── pdfs/                   #   └─ PDF documents
-│   ├── tesla.txt               #   └─ TXT documents
-│   └── notes.txt
-│
-├── scripts/
-│   ├── pdf_loader.py           # Phase 1: Document extraction (PDF + TXT)
-│   ├── document_pipeline.py     # Phase 2: Chunking + embedding + indexing
-│   └── retrieval_system.py      # Phase 3: Similarity search + evaluation
-│
-├── outputs/
-│   ├── phase1_extracted/       # Phase 1 output (extracted text)
-│   └── vector_store/           # Phase 2 output (FAISS index + metadata)
-│
-├── run_phase1.sh               # Phase 1 convenient runner
-├── run_phase2.sh               # Phase 2 convenient runner
-├── run_phase3.sh               # Phase 3 convenient runner
-├── requirements.txt            # Dependencies
-├── README.md                   # This file (quick start)
-└── DOCUMENTATION.md            # Detailed technical guide
-```
-
----
-
-## Features
-
-✅ **PDF Support** — Full page-wise text extraction  
-✅ **TXT Support** — Plain text file ingestion  
-✅ **Semantic Chunking** — Smart text splitting with overlap  
-✅ **Dense Embeddings** — Sentence-Transformers model  
-✅ **Fast Retrieval** — FAISS vector indexing  
-✅ **Metadata Tracking** — Source document + page reference  
-✅ **OCR Fallback** — [ADDITIONAL] Scanned PDF support  
-
----
-
-## Tech Stack
-
-- **Document Loading**: `pypdf`, native Python
-- **Chunking**: `langchain-text-splitters`
-- **Embeddings**: `sentence-transformers`
-- **Indexing**: `faiss-cpu`
-- **Matrix Operations**: `numpy`
-
----
-
-## Next Steps
-
-1. Place PDFs/TXT files in `data/` folder
-2. Run: `bash run_phase2.sh data outputs/vector_store`
-3. Check `outputs/vector_store/metadata.json` for indexed chunks
-4. Phase 3 (retrieval + QA) coming soon!
-
-
-
-**REQUIRED (Original Project):**
-
-- `pypdf` (PDF text extraction)
-- `langchain-text-splitters` (document chunking)
-- `sentence-transformers` (embedding generation)
-- `faiss-cpu` (vector database/index)
-- `numpy` (embedding matrix handling)
-
-**ADDITIONAL – OCR Fallback (Our Enhancement):**
-
-- `pytesseract` + `pdf2image` + `Pillow` (scanned PDF support)
-- System packages: `tesseract-ocr`, `poppler-utils`
-
-To install system packages for OCR fallback:
+Optional system tools:
 
 ```bash
 sudo apt-get update
-sudo apt-get install -y tesseract-ocr poppler-utils
+sudo apt-get install -y antiword tesseract-ocr poppler-utils
 ```
 
-### Environment setup (one-time)
+---
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-```
+### Phase 1 run
 
-## Phase 1: Research & Setup (1–15 March)
-
-### Objectives
-
-- Understand RAG architecture
-- Set up development environment
-- Create project repository structure
-
-### What we do in this phase
-
-1. Learn the RAG pipeline at a high level:
-	- Document loading
-	- Text chunking
-	- Embeddings
-	- Vector storage and retrieval
-	- LLM answer generation with context
-2. Prepare a clean Python environment for this project.
-3. Install core libraries for upcoming RAG work.
-4. Build and run a working PDF/TXT text extraction script.
-
-### Manual setup (run in terminal)
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-```
-
-### Output of Phase 1
-
-- A working script: `scripts/pdf_loader.py`
-- It loads one or more PDF/TXT files and extracts text
-- It saves extracted text files in `outputs/`
-
-### One-command direct run (recommended)
+Script way:
 
 ```bash
 bash run_phase1.sh
 ```
 
-First-time setup or dependency issue:
+Manual way:
 
 ```bash
-bash run_phase1.sh --install-deps
+python scripts/pdf_loader.py --input data --output outputs/extracted
 ```
 
-### Run the PDF loader
+---
 
-```bash
-source .venv/bin/activate
-python scripts/pdf_loader.py --input data --output outputs
-```
+### Phase 2 run
 
-You can also pass a single file (PDF or TXT):
-
-```bash
-python scripts/pdf_loader.py --input data/pdfs/sample.pdf --output outputs
-python scripts/pdf_loader.py --input data/tesla.txt --output outputs
-```
-
-### Notes
-
-- For scanned PDFs (image-only), text extraction may return very little text.
-- OCR support can be added in a later phase if needed.
-
-## Phase 2: Document Processing Pipeline (16–31 March)
-
-### Objective
-
-- Build a complete document ingestion and indexing pipeline.
-
-### Tasks completed in this phase
-
-1. Read PDF/TXT inputs and extract clean text.
-2. Split text into smaller overlapping chunks.
-3. Generate dense vector embeddings for each chunk.
-4. Store all vectors in FAISS vector database.
-5. Save metadata (chunk ID, source file, page number, chunk text).
-
-### Script used
-
-- `scripts/document_pipeline.py`
-
-### Run command
-
-```bash
-source .venv/bin/activate
-pip install -r requirements.txt
-python scripts/document_pipeline.py --input data --output outputs/vector_store
-```
-
-### [ADDITIONAL] Scanned PDF support (OCR Fallback – Our Enhancement)
-
-This feature was **not part of the original project requirements**. We added it to handle scanned/image-only PDFs.
-
-**How it works:**
-
-1. Pipeline tries normal PDF text extraction first (using `pypdf`).
-2. If a page has no selectable text, OCR fallback runs automatically using Tesseract.
-3. Chunks are created from extracted text (normal or OCR).
-
-**To disable OCR fallback** and use only text-based PDFs:
-
-```bash
-python scripts/document_pipeline.py --input data --output outputs/vector_store --disable-ocr-fallback
-```
-
-**Tune OCR quality:**
-
-```bash
-python scripts/document_pipeline.py --input data --output outputs/vector_store --ocr-dpi 400 --ocr-lang eng+hin
-```
-
-- `--ocr-dpi`: Render resolution (default 300; higher = better quality, slower).
-- `--ocr-lang`: Tesseract language codes (e.g., `eng`, `eng+hin` for bilingual).
-
-### One-command direct run (recommended)
+Script way:
 
 ```bash
 bash run_phase2.sh
 ```
 
-Direct script with custom parameters:
+Manual way:
 
 ```bash
-bash run_phase2.sh data outputs/vector_store 600 100 sentence-transformers/all-MiniLM-L6-v2
+python scripts/document_pipeline.py --input data --output outputs/vector_store
 ```
 
-Manual fallback (if you want full control every time):
+---
+
+### Phase 3 run
+
+Query mode:
 
 ```bash
-source .venv/bin/activate
-pip install -r requirements.txt
-python scripts/document_pipeline.py \
-	--input data \
-	--output outputs/vector_store \
-	--chunk-size 600 \
-	--chunk-overlap 100 \
-	--model sentence-transformers/all-MiniLM-L6-v2
+bash run_phase3.sh query --query "Who is the captain of CSK?" --top-k 5
 ```
 
-Single file input examples:
+Eval mode:
 
 ```bash
-python scripts/document_pipeline.py --input data/pdfs/samp.pdf --output outputs/vector_store
-python scripts/document_pipeline.py --input data/tesla.txt --output outputs/vector_store
+bash run_phase3.sh eval --top-k 5 --sample-size 20
 ```
 
-### Optional tuning parameters
+---
+
+### Unified run (Phase 1 + 2)
 
 ```bash
-python scripts/document_pipeline.py \
-	--input data \
-	--output outputs/vector_store \
-	--chunk-size 600 \
-	--chunk-overlap 100 \
-	--model sentence-transformers/all-MiniLM-L6-v2
+bash run_unified.sh
 ```
 
-### Output artifacts
+Use when you want extraction + indexing in one command.
 
-- `outputs/vector_store/index.faiss` → FAISS index file
-- `outputs/vector_store/metadata.json` → chunk metadata for traceability
-- `outputs/vector_store/vectors_shape.json` → vector count and embedding dimension
+---
 
-### How to explain this to your sir
+## 7. Phase-wise Understanding
 
-- In Phase 2, we convert raw document text (PDF/TXT) into semantic units (chunks).
-- Every chunk is converted into a numerical embedding using a transformer model.
-- These embeddings are indexed in FAISS for fast similarity search.
-- Metadata is preserved to support source citation in later phases.
-- This phase prepares the system for Phase 3: retrieval + answer generation.
+### Why Phase 1 exists if Phase 2 can read raw files?
 
-## Codespace Low Disk Warning (Permanent Fix Guide)
+Phase 2 can read raw files directly.
+Still Phase 1 is useful for:
+1. Isolated extraction debugging
+2. Inspecting extracted text quality
+3. Reusing extracted text for repeated experiments
 
-If you see warning like **"Low disk space available"**, this is about **Codespace container storage**, not your local laptop disk.
+### Why Phase 2 is needed?
 
-### Why this happens
+Because retrieval needs vector index, not plain text files.
+Phase 2 creates searchable vector artifacts.
 
-- Python environment (`.venv`) can become large.
-- `sentence-transformers` dependency chain installs `torch`, and sometimes heavy `nvidia` packages.
-- pip / Hugging Face caches can grow to multiple GB.
+### Why Phase 3 is needed?
 
-### Prevention (already applied)
+Phase 3 is actual retriever layer.
+Without it, there is no semantic search interface.
 
-- `run_phase2.sh` now uses `pip install --no-cache-dir -r requirements.txt` with `--install-deps`.
-- This avoids growing pip cache on repeated installs.
+---
 
-### If disk reaches ~100%
+## 8. Current Status vs Internship Plan
 
-- Yes, work can fail (save, install, git operations, indexing).
-- Recreate `.venv` and reinstall only required dependencies.
+Completed:
+1. Phase 1
+2. Phase 2
+3. Phase 3
+
+Not completed yet (future phases):
+1. Phase 4 RAG answer generation with LLM
+2. Phase 5 Frontend/UI
+3. Later enhancement and finalization phases
+
+---
+
+## 9. Troubleshooting Quick Guide
+
+1. Phase 1 says no supported files found
+- Check input path and file extensions
+
+2. DOC file fails
+- Install antiword
+
+3. OCR not working
+- Install tesseract-ocr and poppler-utils
+
+4. Phase 2 interrupted with exit code 130
+- Process was manually interrupted (Ctrl+C)
+- Re-run and let it finish
+
+5. Phase 3 missing index
+- Run Phase 2 first to generate vector store
+
+---
+
+## 10. Update Policy (Important)
+
+Whenever new development is done, update this README in the same commit.
+At minimum update these sections:
+1. Completed scope
+2. Folder structure
+3. New scripts/modules
+4. Run commands
+5. Dependency explanation
+6. Phase status
+
+This keeps project documentation always synced with code.
+

@@ -1,26 +1,15 @@
-# ===== REQUIRED (Original Project) =====
-# Required for core extraction + indexing pipeline.
-# langchain-text-splitters: text ko chunk size/overlap ke saath split karne ke liye.
+# ===== REQUIRED DEPENDENCIES =====
+# langchain-text-splitters: text chunks banane ke liye (1000 size, 200 overlap)
 langchain-text-splitters
-# faiss-cpu: embeddings ko vector index me store/search karne ke liye.
-faiss-cpu
-# sentence-transformers: chunk/query text ko embedding vectors me convert karne ke liye.
-sentence-transformers
-# pypdf: PDF files se text extract karne ke liye.
-pypdf
-# numpy: embedding arrays ko numeric matrix format me handle karne ke liye.
-numpy
-# python-docx: .docx Word files ka text read karne ke liye.
-python-docx
-# striprtf: .rtf files ko plain text me convert karne ke liye.
-striprtf
 
-# ===== ADDITIONAL (OCR Fallback - Our Enhancement) =====
-# Optional OCR support for scanned PDFs.
-# Also install system tools: `tesseract-ocr` and `poppler-utils`.
-# pytesseract: image-based text (OCR) read karne ke liye.
-pytesseract
-# pdf2image: PDF pages ko image me convert karne ke liye (OCR step se pehle).
-pdf2image
-# Pillow: image processing dependency (OCR pipeline support).
-Pillow
+# faiss-cpu: fast similarity search ke liye vector embeddings ko index karne ke liye
+faiss-cpu
+
+# sentence-transformers: text ko convert karne ke liye vector embeddings me
+sentence-transformers
+
+# pypdf: PDF files se text extract karne ke liye
+pypdf
+
+# numpy: numpy arrays ko handle karne ke liye embeddings ke saath
+numpy

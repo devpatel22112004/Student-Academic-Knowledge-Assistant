@@ -1,30 +1,20 @@
-# Student Academic Knowledge Assistant (RAG-Based AI System)
+# Student Academic Knowledge Assistant
 
-This project is a Retrieval Augmented Generation (RAG) foundation system for academic content.
-It helps process study documents and retrieve relevant context for user questions.
-
-Current completed scope:
-- Phase 1: Document loading and text extraction
-- Phase 2: Chunking, embeddings, and vector indexing
-- Phase 3: Retrieval and retrieval-quality evaluation
+A simple Python program that helps students find relevant information from their academic documents using AI-powered search.
 
 ---
 
-## 1. Project Goal (0-Level Explanation)
+## 📌 What Does This Project Do?
 
-The project solves this problem:
-- Students have many notes and files
-- They want fast, relevant answers from their own material
-- Generic chatbot answers may be incorrect or unrelated
+**Problem:** Students have many PDF and TXT notes, but finding relevant information is hard.
 
-So this system does the following:
-1. Read academic documents
-2. Convert document text into searchable vector format
-3. Retrieve top relevant chunks for a user query
-4. (Next phases) use retrieved chunks with an LLM for final answer generation
+**Solution:** This program:
+1. Reads your PDF and TXT files from the `data` folder
+2. Converts the text into searchable vectors (called embeddings)
+3. When you ask a question, it finds the most relevant pieces from your documents
+4. Shows you the answers directly from your own study material
 
-Important architecture point:
-- Answers must come from uploaded documents, not random internet text
+**Key Point:** All answers come from YOUR documents, not the internet.
 
 ---
 

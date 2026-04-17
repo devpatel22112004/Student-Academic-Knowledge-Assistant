@@ -31,19 +31,19 @@ def read_document_content(file_path):
     Reads content from a PDF or TXT file.
     Returns a list of (page_info, text_content) tuples.
     """
-    content = []
-    file_name = file_path.name
+    content = [] #EMPTY LIST TO HOLD ALL CONTENT FROM THE FILE
+    file_name = file_path.name 
     
-    if file_path.suffix.lower() == ".pdf":
+    if file_path.suffix.lower() == ".pdf": 
         # Read PDF file
         reader = PdfReader(file_path)
-        for page_num, page in enumerate(reader.pages, start=1):
+        for page_num, page in enumerate(reader.pages, start=1): #LOOP THROUGH EACH PAGE IN THE PDF
             text = page.extract_text()
-            content.append((f"{file_name} - Page {page_num}", text))
-    
+            content.append((f"{file_name} - Page {page_num}", text)) #APPEND THE PAGE INFO AND TEXT TO THE CONTENT LIST
+                                                                    #("algorithms.pdf - Page 1", "Binary Search works by...")
     elif file_path.suffix.lower() == ".txt":
         # Read TXT file
-        text = file_path.read_text(encoding="utf-8")
+        text = file_path.read_text(encoding="utf-8") #encoding="utf-8" isliye, taaki Hindi/English special characters sahi read ho saken.
         content.append((file_name, text))
     
     return content
@@ -53,7 +53,7 @@ def read_document_content(file_path):
 def chunk_text(all_documents):
     """
     Takes document content and splits it into manageable chunks.
-    Each chunk is 1000 characters with 200 character overlap.
+    Each chunk is 700 characters with 120 character overlap.
     Returns a list of chunks with their source information.
     """
     text_splitter = RecursiveCharacterTextSplitter(
@@ -62,9 +62,9 @@ def chunk_text(all_documents):
     )
     
     chunks = []
-    for source, text in all_documents:
-        split_texts = text_splitter.split_text(text)
-        for i, chunk in enumerate(split_texts):
+    for source, text in all_documents: #LOOP THROUGH EACH DOCUMENT CONTENT (SOURCE, TEXT) AND SPLIT THE TEXT INTO CHUNKS
+        split_texts = text_splitter.split_text(text) 
+        for i, chunk in enumerate(split_texts): #LOOP THROUGH EACH CHUNK AND APPEND IT TO THE CHUNKS LIST WITH SOURCE INFO AND CHUNK ID
             chunks.append({
                 "source": source,
                 "text": chunk,
@@ -84,23 +84,23 @@ def create_embeddings(chunks):
     model = SentenceTransformer("all-MiniLM-L6-v2")
     
     # Extract just the text from chunks
-    texts = [chunk["text"] for chunk in chunks]
+    texts = [chunk["text"] for chunk in chunks] #LOOP THROUGH IN CHUNKS  ONLY EXTRACT TEXT ONLY
     
     # Convert texts to embeddings (vectors)
-    embeddings = model.encode(texts)
+    embeddings = model.encode(texts) 
     
-    return embeddings, model
+    return embeddings, model #RETURN BEACUSE QUERY ALSO WE ARE GOING TO USE THIS MODEL TO CONVERT QUERY INTO EMBEDDING
 
 
 # STEP 5: Create FAISS index for fast similarity search
-def build_search_index(embeddings):
+def build_search_index(embeddings): 
     """
     Creates a FAISS index from embeddings.
     This allows us to quickly find similar chunks to a query.
     """
     # Normalize embeddings and use cosine-like search with inner product.
-    emb = np.array(embeddings, dtype=np.float32)
-    faiss.normalize_L2(emb)
+    emb = np.array(embeddings, dtype=np.float32) #CONVERT EMBEDDINGS TO NUMPY ARRAY OF TYPE FLOAT32 BECAUSE FAISS WORKS WITH NUMPY ARRAYS
+    faiss.normalize_L2(emb) 
 
     # Create FAISS index
     index = faiss.IndexFlatIP(emb.shape[1])

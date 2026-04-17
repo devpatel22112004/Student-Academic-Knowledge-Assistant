@@ -16,329 +16,188 @@ A simple Python program that helps students find relevant information from their
 
 **Key Point:** All answers come from YOUR documents, not the internet.
 
----
-
-## 2. What Is Completed So Far
-
-### Phase 1 (Completed)
-
-Module:
-- [scripts/pdf_loader.py](scripts/pdf_loader.py)
-
-Runner:
-- [run_phase1.sh](run_phase1.sh)
-
-What it does:
-1. Scans input path for supported files
-2. Extracts text per format
-3. Saves normalized text output in extracted folder
-
-Supported formats in Phase 1:
-- PDF
-- TXT
-- RTF
-- DOCX
-- DOC
-
-Output default:
-- [outputs/extracted](outputs/extracted)
 
 ---
 
-### Phase 2 (Completed)
+## 🚀 How to Use
 
-Module:
-- [scripts/document_pipeline.py](scripts/document_pipeline.py)
-
-Runner:
-- [run_phase2.sh](run_phase2.sh)
-
-What it does:
-1. Reads supported documents
-2. Splits text into chunks with overlap
-3. Generates embeddings using sentence-transformers
-4. Stores vectors in FAISS
-5. Saves metadata and vector shape info
-
-Output default:
-- [outputs/vector_store](outputs/vector_store)
-
-Main output artifacts:
-1. [outputs/vector_store/index.faiss](outputs/vector_store/index.faiss)
-2. [outputs/vector_store/metadata.json](outputs/vector_store/metadata.json)
-3. [outputs/vector_store/vectors_shape.json](outputs/vector_store/vectors_shape.json)
-
----
-
-### Phase 3 (Completed)
-
-Module:
-- [scripts/retrieval_system.py](scripts/retrieval_system.py)
-
-Runner:
-- [run_phase3.sh](run_phase3.sh)
-
-Modes:
-1. Query mode
-- Semantic retrieval for real user query
-- Returns top-k relevant chunks
-
-2. Eval mode
-- Retrieval quality metrics
-- Outputs exact_hit_rate, source_hit_rate, mrr
-
----
-
-## 3. Additional Enhancements Added Beyond Basic Scope
-
-These are enhancements added during development:
-
-1. OCR fallback for scanned PDF pages
-- Implemented in [scripts/document_pipeline.py](scripts/document_pipeline.py)
-- Used when PDF text extraction returns empty text for image-based pages
-
-2. Extended document format support
-- Added support for RTF, DOCX, DOC (in addition to PDF/TXT)
-- Implemented in both:
-  - [scripts/pdf_loader.py](scripts/pdf_loader.py)
-  - [scripts/document_pipeline.py](scripts/document_pipeline.py)
-
-3. Better output alignment
-- Phase 1 default output aligned to [outputs/extracted](outputs/extracted)
-
-4. Cleaner comments and readability improvements
-- Line-by-line simple comments added in core scripts and runners
-
-5. Null character sanitization
-- Fixed hidden null byte issue from some RTF extraction paths
-
----
-
-## 4. Full Folder Structure
-
-Current practical structure:
-
-```text
-Student-Academic-Knowledge-Assistant/
-├── data/
-│   ├── pdfs/                     # Optional nested PDF folder
-│   ├── cskinfo.rtf               # Example input
-│   ├── mumbaiindiansinfo.txt     # Example input
-│   └── rcbinfo.pdf               # Example input
-│
-├── scripts/
-│   ├── pdf_loader.py             # Phase 1 extraction module
-│   ├── document_pipeline.py      # Phase 2 indexing module
-│   └── retrieval_system.py       # Phase 3 retrieval module
-│
-├── outputs/
-│   ├── extracted/                # Phase 1 output text files
-│   │   ├── cskinfo.txt
-│   │   ├── mumbaiindiansinfo.txt
-│   │   └── rcbinfo.txt
-│   │
-│   └── vector_store/             # Phase 2 output artifacts
-│       ├── index.faiss
-│       ├── metadata.json
-│       └── vectors_shape.json
-│
-├── run_phase1.sh                 # Phase 1 runner
-├── run_phase2.sh                 # Phase 2 runner
-├── run_phase3.sh                 # Phase 3 runner
-├── run_unified.sh                # Unified Phase 1 + 2 runner
-├── requirements.txt              # Project dependencies
-├── README.md                     # This file
-└── DOCUMENTATION.md              # Extended technical notes
-```
-
----
-
-## 5. Dependency Explanation (Why Each Package Is Installed)
-
-See [requirements.txt](requirements.txt) for package list.
-
-Core packages:
-1. langchain-text-splitters
-- Chunking with size and overlap
-
-2. faiss-cpu
-- Vector indexing and similarity search
-
-3. sentence-transformers
-- Text to embedding conversion
-
-4. pypdf
-- PDF text extraction
-
-5. numpy
-- Embedding matrix handling
-
-6. python-docx
-- DOCX text extraction
-
-7. striprtf
-- RTF to plain-text conversion
-
-Additional OCR packages:
-1. pytesseract
-- OCR engine bridge
-
-2. pdf2image
-- Convert PDF pages to images for OCR
-
-3. Pillow
-- Image handling dependency
-
-System tools needed for full support:
-1. antiword (for DOC)
-2. tesseract-ocr (for OCR)
-3. poppler-utils (for OCR rendering)
-
----
-
-## 6. Setup and Run Commands
-
-### One-time setup
+### Step 1: Setup (First Time Only)
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
+# Install all required packages
 pip install -r requirements.txt
 ```
 
-Optional system tools:
+### Step 2: Add Your Documents
+
+Put your PDF and TXT files in the `data` folder:
+```
+data/
+  ├── notes.pdf
+  ├── lectures.txt
+  ├── chapter1.pdf
+  └── study_guide.txt
+```
+
+### Step 3: Run the Program
 
 ```bash
-sudo apt-get update
-sudo apt-get install -y antiword tesseract-ocr poppler-utils
+python main.py
 ```
+
+### Step 4: Ask Your Questions
+
+The program will load everything and ask for your questions. Just type and press Enter.
+
+Type `quit` or `exit` to stop the program.
 
 ---
 
-### Phase 1 run
+## 📁 Project Structure
 
-Script way:
-
-```bash
-bash run_phase1.sh
+```
+Student-Academic-Knowledge-Assistant/
+├── main.py                      # Main program (ONLY FILE YOU RUN)
+├── data/                        # Put your PDF/TXT files here
+│   ├── mumbaiindiansinfo.txt
+│   └── pdfs/
+├── requirements.txt             # Packages needed
+└── README.md                    # This file
 ```
 
-Manual way:
-
-```bash
-python scripts/pdf_loader.py --input data --output outputs/extracted
-```
+**Note:** The `outputs` folder is NOT used. The `scripts` folder is NOT used. Delete them if you want.
 
 ---
 
-### Phase 2 run
+## 🔧 How It Works (Step by Step)
 
-Script way:
+Your program has 6 main steps:
+
+**Step 1: Find Documents**
+- Looks for all PDF and TXT files in `data` folder
+
+**Step 2: Read Content**
+- Opens each file and reads the text inside
+
+**Step 3: Break into Chunks**
+- Splits large documents into smaller pieces (1000 characters each)
+- Chunks overlap by 200 characters to keep context
+
+**Step 4: Create Embeddings**
+- Converts each chunk into a "vector" (list of numbers)
+- Vectors represent the meaning of the text
+
+**Step 5: Build Search Index**
+- Stores vectors in a FAISS index for super-fast search
+
+**Step 6: Answer Questions**
+- Converts your question into a vector
+- Finds the 5 most similar chunks
+- Shows you the results
+
+---
+
+## 📦 Requirements
+
+Install packages from `requirements.txt`:
 
 ```bash
-bash run_phase2.sh
+pip install -r requirements.txt
 ```
 
-Manual way:
-
-```bash
-python scripts/document_pipeline.py --input data --output outputs/vector_store
-```
-
----
-
-### Phase 3 run
-
-Query mode:
-
-```bash
-bash run_phase3.sh query --query "Who is the captain of CSK?" --top-k 5
-```
-
-Eval mode:
-
-```bash
-bash run_phase3.sh eval --top-k 5 --sample-size 20
-```
+**What each package does:**
+- `langchain-text-splitters`: Splits text into chunks
+- `faiss-cpu`: Fast similarity search
+- `sentence-transformers`: Converts text to vectors (embeddings)
+- `pypdf`: Reads PDF files
+- `numpy`: Handles number arrays
 
 ---
 
-### Unified run (Phase 1 + 2)
+## ❓ FAQ
 
-```bash
-bash run_unified.sh
-```
+**Q: Can I use Word documents (.docx)?**
+A: Not in this version. Use PDF or TXT files only.
 
-Use when you want extraction + indexing in one command.
+**Q: How many documents can I use?**
+A: As many as you want! The program will process all of them.
 
----
+**Q: Does it need internet?**
+A: No! Everything runs locally on your computer.
 
-## 7. Phase-wise Understanding
+**Q: Do I need a .env file?**
+A: No. This project does not require API keys or environment variables.
 
-### Why Phase 1 exists if Phase 2 can read raw files?
+**Q: Where does it save my questions?**
+A: Nowhere. Everything runs in memory.
 
-Phase 2 can read raw files directly.
-Still Phase 1 is useful for:
-1. Isolated extraction debugging
-2. Inspecting extracted text quality
-3. Reusing extracted text for repeated experiments
+**Q: Why is the first run slow?**
+A: The embedding model takes time to download on first use. After that, it's cached and fast.
 
-### Why Phase 2 is needed?
-
-Because retrieval needs vector index, not plain text files.
-Phase 2 creates searchable vector artifacts.
-
-### Why Phase 3 is needed?
-
-Phase 3 is actual retriever layer.
-Without it, there is no semantic search interface.
+**Q: HF_TOKEN warning appears, is it required?**
+A: Not required. HF token is optional and only helps with faster download/rate limits.
 
 ---
 
-## 8. Current Status vs Internship Plan
+## 🎯 How to Explain This to Your Professor
 
-Completed:
-1. Phase 1
-2. Phase 2
-3. Phase 3
+**What it does:**
+1. Reads PDF and TXT files from the `data` folder
+2. Splits text into chunks (1000 characters with 200 overlap)
+3. Creates AI vectors of each chunk using sentence-transformers
+4. Builds a FAISS index for fast similarity search
+5. When user asks a question, finds the 5 most similar chunks and shows them
 
-Not completed yet (future phases):
-1. Phase 4 RAG answer generation with LLM
-2. Phase 5 Frontend/UI
-3. Later enhancement and finalization phases
+**Technologies used:**
+- **Python**: Programming language
+- **FAISS**: Facebook AI Similarity Search (fast vector search)
+- **Sentence-Transformers**: Pre-trained model for text embeddings
+- **PyPDF**: PDF text extraction
+- **LangChain**: Text splitting library
+- **NumPy**: Numeric array operations
 
----
-
-## 9. Troubleshooting Quick Guide
-
-1. Phase 1 says no supported files found
-- Check input path and file extensions
-
-2. DOC file fails
-- Install antiword
-
-3. OCR not working
-- Install tesseract-ocr and poppler-utils
-
-4. Phase 2 interrupted with exit code 130
-- Process was manually interrupted (Ctrl+C)
-- Re-run and let it finish
-
-5. Phase 3 missing index
-- Run Phase 2 first to generate vector store
+**Why it's good:**
+- Simple and easy to understand
+- Uses industry-standard tools
+- All answers come from YOUR documents
+- No internet or API keys needed
+- Fast and efficient
 
 ---
 
-## 10. Update Policy (Important)
+## 🛠️ Troubleshooting
 
-Whenever new development is done, update this README in the same commit.
-At minimum update these sections:
-1. Completed scope
-2. Folder structure
-3. New scripts/modules
-4. Run commands
-5. Dependency explanation
-6. Phase status
+**"No PDF or TXT files found"**
+- Check that files are in the `data` folder
+- Make sure file names end with `.pdf` or `.txt`
 
-This keeps project documentation always synced with code.
+**"ModuleNotFoundError"**
+- Run: `pip install -r requirements.txt`
 
+**Program runs slowly**
+- First run is slower (downloading embedding model)
+- Subsequent runs are faster
+
+**Can't find the answer I'm looking for**
+- Try asking your question differently
+- Add more relevant documents to `data` folder
+
+---
+
+## 📚 Code Explanation
+
+### [main.py](main.py)
+
+- `find_all_documents()`: Finds all PDF/TXT files in `data` folder
+- `read_document_content()`: Reads content from PDF or TXT
+- `chunk_text()`: Breaks text into manageable pieces
+- `create_embeddings()`: Converts chunks to vectors
+- `build_search_index()`: Creates FAISS index
+- `find_relevant_chunks()`: Finds similar chunks for your question
+- `main()`: Main program that runs all 6 steps
+
+---
+
+**Version:** 1.0 (Simplified)
+**Last Updated:** 2026
+**Language:** Python 3.8+

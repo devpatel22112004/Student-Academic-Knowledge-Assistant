@@ -1,5 +1,6 @@
 
 from pathlib import Path
+import re
 import faiss
 import numpy as np
 from pypdf import PdfReader
@@ -63,8 +64,8 @@ def chunk_text(all_documents):
     Returns a list of chunks with their source information.
     """
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=200
+        chunk_size=700,
+        chunk_overlap=120
     )
     
     chunks = []
@@ -108,13 +109,41 @@ def build_search_index(embeddings):
     Creates a FAISS index from embeddings.
     This allows us to quickly find similar chunks to a query.
     """
+    # Normalize embeddings and use cosine-like search with inner product.
+    emb = np.array(embeddings, dtype=np.float32)
+    faiss.normalize_L2(emb)
+
     # Create FAISS index
-    index = faiss.IndexFlatL2(embeddings.shape[1])
+    index = faiss.IndexFlatIP(emb.shape[1])
     
     # Add embeddings to the index
-    index.add(np.array(embeddings, dtype=np.float32))
+    index.add(emb)
     
     return index
+
+
+def extract_keywords(text):
+    """
+    Extract simple keywords from query text for lexical matching.
+    """
+    stop_words = {
+        "the", "is", "a", "an", "and", "or", "to", "of", "in", "on", "for",
+        "from", "what", "who", "when", "where", "why", "how", "explain", "describe"
+    }
+    words = re.findall(r"[a-zA-Z0-9]+", text.lower())
+    return [w for w in words if len(w) > 2 and w not in stop_words]
+
+
+def lexical_overlap_score(query, chunk_text):
+    """
+    Score chunk by keyword overlap with query.
+    """
+    q_keywords = set(extract_keywords(query))
+    if not q_keywords:
+        return 0.0
+    c_words = set(re.findall(r"[a-zA-Z0-9]+", chunk_text.lower()))
+    hits = len(q_keywords.intersection(c_words))
+    return hits / len(q_keywords)
 
 
 # ============================================================================
@@ -127,17 +156,56 @@ def find_relevant_chunks(question, index, chunks, model, num_results=5):
     """
     # Convert question to embedding
     question_embedding = model.encode([question])
+    question_embedding = np.array(question_embedding, dtype=np.float32)
+    faiss.normalize_L2(question_embedding)
     
     # Search for top-k similar chunks
-    distances, indices = index.search(
-        np.array(question_embedding, dtype=np.float32),
-        num_results
-    )
-    
-    # Get the actual chunks
-    relevant_chunks = [chunks[i] for i in indices[0]]
+    # Retrieve larger candidate set, then rerank with lexical overlap.
+    candidate_k = min(max(num_results * 3, 10), len(chunks))
+    dense_scores, indices = index.search(question_embedding, candidate_k)
+
+    candidates = []
+    for rank, chunk_idx in enumerate(indices[0]):
+        dense = float(dense_scores[0][rank])
+        lexical = lexical_overlap_score(question, chunks[chunk_idx]["text"])
+        # Weighted hybrid score improves exact-topic retrieval.
+        hybrid = (0.7 * dense) + (0.3 * lexical)
+        candidates.append((hybrid, chunk_idx))
+
+    candidates.sort(key=lambda x: x[0], reverse=True)
+
+    # Get top chunks after hybrid reranking.
+    relevant_chunks = [chunks[idx] for _, idx in candidates[:num_results]]
     
     return relevant_chunks
+
+
+def generate_extractive_answer(question, relevant_chunks, max_sentences=3):
+    """
+    Create a short grounded answer by selecting best-matching sentences
+    from retrieved chunks.
+    """
+    keywords = set(extract_keywords(question))
+    sentence_candidates = []
+
+    for chunk in relevant_chunks:
+        sentences = re.split(r"(?<=[.!?])\s+", chunk["text"])
+        for sent in sentences:
+            if len(sent.strip()) < 20:
+                continue
+            words = set(re.findall(r"[a-zA-Z0-9]+", sent.lower()))
+            overlap = len(keywords.intersection(words)) if keywords else 0
+            sentence_candidates.append((overlap, sent.strip(), chunk["source"]))
+
+    sentence_candidates.sort(key=lambda x: x[0], reverse=True)
+    selected = sentence_candidates[:max_sentences]
+
+    if not selected:
+        return "I could not find an exact sentence-level answer in the indexed documents.", []
+
+    answer = " ".join([item[1] for item in selected])
+    sources = [item[2] for item in selected]
+    return answer, sources
 
 
 # ============================================================================
@@ -201,10 +269,19 @@ def main():
         
         # Find relevant chunks
         relevant = find_relevant_chunks(question, index, chunks, model)
+        answer, answer_sources = generate_extractive_answer(question, relevant)
         
         print("\n" + "=" * 70)
         print(f"RESULTS FOR: {question}")
         print("=" * 70)
+
+        print("\nBest Answer (from your documents):")
+        print(answer)
+
+        if answer_sources:
+            print("\nAnswer Sources:")
+            for src in sorted(set(answer_sources)):
+                print(f"- {src}")
         
         for idx, chunk in enumerate(relevant, 1):
             print(f"\n[Result {idx}] - Source: {chunk['source']}")

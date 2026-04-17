@@ -1,16 +1,13 @@
+from pathlib import Path  # File path handling 
+import re  # Regex for keyword extraction and sentence splitting
+import faiss  # Fast vector similarity search
+import numpy as np  # Array operations for embeddings
+from pypdf import PdfReader  # Extract text from PDF pages
+from sentence_transformers import SentenceTransformer  # Text to 384D embeddings
+from langchain_text_splitters import RecursiveCharacterTextSplitter  # Smart text chunking
 
-from pathlib import Path
-import re
-import faiss
-import numpy as np
-from pypdf import PdfReader
-from sentence_transformers import SentenceTransformer
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-
-# ============================================================================
 # STEP 1: Find all PDF and TXT files in the data folder
-# ============================================================================
 def find_all_documents():
     """
     Finds all PDF and TXT files in the 'data' folder.
@@ -28,9 +25,7 @@ def find_all_documents():
     return sorted(documents)
 
 
-# ============================================================================
 # STEP 2: Read the content from PDF and TXT files
-# ============================================================================
 def read_document_content(file_path):
     """
     Reads content from a PDF or TXT file.
@@ -54,9 +49,7 @@ def read_document_content(file_path):
     return content
 
 
-# ============================================================================
 # STEP 3: Break down text into smaller chunks
-# ============================================================================
 def chunk_text(all_documents):
     """
     Takes document content and splits it into manageable chunks.
@@ -81,9 +74,7 @@ def chunk_text(all_documents):
     return chunks
 
 
-# ============================================================================
 # STEP 4: Convert text chunks into vector embeddings
-# ============================================================================
 def create_embeddings(chunks):
     """
     Converts text chunks into vector embeddings using a pre-trained model.
@@ -101,9 +92,7 @@ def create_embeddings(chunks):
     return embeddings, model
 
 
-# ============================================================================
 # STEP 5: Create FAISS index for fast similarity search
-# ============================================================================
 def build_search_index(embeddings):
     """
     Creates a FAISS index from embeddings.
@@ -146,9 +135,7 @@ def lexical_overlap_score(query, chunk_text):
     return hits / len(q_keywords)
 
 
-# ============================================================================
 # STEP 6: Find relevant chunks for a user question
-# ============================================================================
 def find_relevant_chunks(question, index, chunks, model, num_results=5):
     """
     Takes a user question, finds similar chunks from documents.
@@ -208,9 +195,7 @@ def generate_extractive_answer(question, relevant_chunks, max_sentences=3):
     return answer, sources
 
 
-# ============================================================================
-# MAIN PROGRAM
-# ============================================================================
+# MAIN PROGRAM - Run everything step by step
 def main():
     print("=" * 70)
     print("STUDENT ACADEMIC KNOWLEDGE ASSISTANT")

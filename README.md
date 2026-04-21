@@ -28,6 +28,25 @@ A simple Python program that helps students find relevant information from their
 pip install -r requirements.txt
 ```
 
+### Step 1.1: Optional (Gemini Flash API Key)
+
+If you want LLM-generated answers (instead of only extractive local answers), create a Google AI Studio API key.
+
+Best option: store it once in Streamlit secrets so you do not need to paste it every time.
+
+1. Create the file `.streamlit/secrets.toml`
+2. Add:
+
+```bash
+GEMINI_API_KEY="your_api_key_here"
+```
+
+Optional terminal env var:
+
+```bash
+export GEMINI_API_KEY="your_api_key_here"
+```
+
 ### Step 2: Add Your Documents
 
 Put your PDF and TXT files in the `data` folder:
@@ -45,6 +64,20 @@ data/
 python main.py
 ```
 
+### Step 3 (Web Frontend - NotebookLM Style)
+
+Run the frontend app:
+
+```bash
+python -m streamlit run app.py
+```
+
+Then:
+1. Upload PDF/TXT files from UI
+2. Click **Process Documents**
+3. The app will auto-load the API key from Streamlit secrets or environment
+4. Ask questions in chat box
+
 ### Step 4: Ask Your Questions
 
 The program will load everything and ask for your questions. Just type and press Enter.
@@ -57,6 +90,7 @@ Type `quit` or `exit` to stop the program.
 
 ```
 Student-Academic-Knowledge-Assistant/
+├── app.py                       # Streamlit frontend (upload + chat + Gemini)
 ├── main.py                      # Main program (ONLY FILE YOU RUN)
 ├── data/                        # Put your PDF/TXT files here
 │   ├── mumbaiindiansinfo.txt
@@ -126,7 +160,7 @@ A: As many as you want! The program will process all of them.
 A: No! Everything runs locally on your computer.
 
 **Q: Do I need a .env file?**
-A: No. This project does not require API keys or environment variables.
+A: No. The app can auto-read `GEMINI_API_KEY` from Streamlit secrets or environment if you want Gemini answers.
 
 **Q: Where does it save my questions?**
 A: Nowhere. Everything runs in memory.
@@ -201,3 +235,14 @@ A: Not required. HF token is optional and only helps with faster download/rate l
 **Version:** 1.0 (Simplified)
 **Last Updated:** 2026
 **Language:** Python 3.8+
+
+---
+
+## 🌐 Frontend Features (New)
+
+- NotebookLM-inspired interface
+- Multi-file upload (PDF + TXT)
+- RAG retrieval from uploaded files
+- Gemini Flash answer generation
+- Source chips for transparency
+- Fallback local extractive mode when API key is missing

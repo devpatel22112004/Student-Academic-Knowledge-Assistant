@@ -10,3 +10,6 @@ outputs/
 
 # Large/raw academic PDFs may be private or too heavy for repository history.
 data/pdfs/*.pdf
+
+# Local Streamlit secrets should stay machine-private.
+.streamlit/secrets.toml

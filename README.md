@@ -1,6 +1,6 @@
 # Student Academic Knowledge Assistant
 
-A simple Python program that helps students find relevant information from their academic documents using AI-powered search.
+A Python-based academic assistant that helps students ask questions over their own notes using retrieval and optional Gemini Flash generation.
 
 ---
 
@@ -8,11 +8,11 @@ A simple Python program that helps students find relevant information from their
 
 **Problem:** Students have many PDF and TXT notes, but finding relevant information is hard.
 
-**Solution:** This program:
+**Solution:** This project:
 1. Reads your PDF and TXT files from the `data` folder
-2. Converts the text into searchable vectors (called embeddings)
-3. When you ask a question, it finds the most relevant pieces from your documents
-4. Shows you the answers directly from your own study material
+2. Splits text into chunks and converts chunks into embeddings
+3. Retrieves the most relevant chunks for each question
+4. Generates grounded answers from your own study material
 
 **Key Point:** All answers come from YOUR documents, not the internet.
 
@@ -64,7 +64,7 @@ data/
 python main.py
 ```
 
-### Step 3 (Web Frontend - NotebookLM Style)
+### Step 3 (Web Frontend)
 
 Run the frontend app:
 
@@ -72,10 +72,16 @@ Run the frontend app:
 python -m streamlit run app.py
 ```
 
+You can also run:
+
+```bash
+python app.py
+```
+
 Then:
 1. Upload PDF/TXT files from UI
 2. Click **Process Documents**
-3. The app will auto-load the API key from Streamlit secrets or environment
+3. The app auto-loads the API key from Streamlit secrets or environment
 4. Ask questions in chat box
 
 ### Step 4: Ask Your Questions
@@ -91,7 +97,9 @@ Type `quit` or `exit` to stop the program.
 ```
 Student-Academic-Knowledge-Assistant/
 ├── app.py                       # Streamlit frontend (upload + chat + Gemini)
-├── main.py                      # Main program (ONLY FILE YOU RUN)
+├── main.py                      # CLI version of the assistant
+├── .streamlit/
+│   └── secrets.toml             # Optional local API key config
 ├── data/                        # Put your PDF/TXT files here
 │   ├── mumbaiindiansinfo.txt
 │   └── pdfs/
@@ -99,13 +107,13 @@ Student-Academic-Knowledge-Assistant/
 └── README.md                    # This file
 ```
 
-**Note:** The `outputs` folder is NOT used. The `scripts` folder is NOT used. Delete them if you want.
+**Note:** `.streamlit/secrets.toml` is local and should not be committed.
 
 ---
 
 ## 🔧 How It Works (Step by Step)
 
-Your program has 6 main steps:
+The core flow has 6 steps:
 
 **Step 1: Find Documents**
 - Looks for all PDF and TXT files in `data` folder
@@ -114,8 +122,8 @@ Your program has 6 main steps:
 - Opens each file and reads the text inside
 
 **Step 3: Break into Chunks**
-- Splits large documents into smaller pieces (1000 characters each)
-- Chunks overlap by 200 characters to keep context
+- Splits large documents into smaller pieces (700 characters each)
+- Chunks overlap by 120 characters to preserve context
 
 **Step 4: Create Embeddings**
 - Converts each chunk into a "vector" (list of numbers)
@@ -125,9 +133,9 @@ Your program has 6 main steps:
 - Stores vectors in a FAISS index for super-fast search
 
 **Step 6: Answer Questions**
-- Converts your question into a vector
-- Finds the 5 most similar chunks
-- Shows you the results
+- Retrieves the top relevant chunks
+- Uses Gemini Flash (if API key is available)
+- Falls back to local extractive answer if API/model is unavailable
 
 ---
 
@@ -145,6 +153,8 @@ pip install -r requirements.txt
 - `sentence-transformers`: Converts text to vectors (embeddings)
 - `pypdf`: Reads PDF files
 - `numpy`: Handles number arrays
+- `streamlit`: Web interface
+- `google-generativeai`: Gemini Flash API integration
 
 ---
 
@@ -157,13 +167,13 @@ A: Not in this version. Use PDF or TXT files only.
 A: As many as you want! The program will process all of them.
 
 **Q: Does it need internet?**
-A: No! Everything runs locally on your computer.
+A: Local retrieval works without internet. Gemini Flash generation requires internet and API access.
 
 **Q: Do I need a .env file?**
-A: No. The app can auto-read `GEMINI_API_KEY` from Streamlit secrets or environment if you want Gemini answers.
+A: No. You can store `GEMINI_API_KEY` in `.streamlit/secrets.toml` or set it as an environment variable.
 
 **Q: Where does it save my questions?**
-A: Nowhere. Everything runs in memory.
+A: Chat history is kept in Streamlit session memory while the app is running.
 
 **Q: Why is the first run slow?**
 A: The embedding model takes time to download on first use. After that, it's cached and fast.
@@ -177,10 +187,11 @@ A: Not required. HF token is optional and only helps with faster download/rate l
 
 **What it does:**
 1. Reads PDF and TXT files from the `data` folder
-2. Splits text into chunks (1000 characters with 200 overlap)
+2. Splits text into chunks (700 characters with 120 overlap)
 3. Creates AI vectors of each chunk using sentence-transformers
 4. Builds a FAISS index for fast similarity search
-5. When user asks a question, finds the 5 most similar chunks and shows them
+5. Retrieves relevant chunks and answers from those chunks
+6. Optionally uses Gemini Flash for better natural responses
 
 **Technologies used:**
 - **Python**: Programming language
@@ -194,7 +205,7 @@ A: Not required. HF token is optional and only helps with faster download/rate l
 - Simple and easy to understand
 - Uses industry-standard tools
 - All answers come from YOUR documents
-- No internet or API keys needed
+- Works locally even without API keys
 - Fast and efficient
 
 ---
@@ -230,6 +241,13 @@ A: Not required. HF token is optional and only helps with faster download/rate l
 - `find_relevant_chunks()`: Finds similar chunks for your question
 - `main()`: Main program that runs all 6 steps
 
+### [app.py](app.py)
+
+- Streamlit frontend for upload, processing, and Q/A
+- Gemini Flash integration with automatic supported-model selection
+- Fallback local extractive answer if API/model call fails
+- Source preview panel for retrieved context
+
 ---
 
 **Version:** 1.0 (Simplified)
@@ -240,9 +258,9 @@ A: Not required. HF token is optional and only helps with faster download/rate l
 
 ## 🌐 Frontend Features (New)
 
-- NotebookLM-inspired interface
+- Clean modern interface
 - Multi-file upload (PDF + TXT)
 - RAG retrieval from uploaded files
 - Gemini Flash answer generation
-- Source chips for transparency
+- Source pills and source preview details
 - Fallback local extractive mode when API key is missing

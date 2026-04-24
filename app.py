@@ -1,42 +1,37 @@
-import io
-import os
-import sys
-from pathlib import Path
+import io # file ko savekare bina uska memory me handle karna.
+import os # File handling aur environment variables ke liye.
+import sys # python progrmam ka system level interaction ke liye.
+from pathlib import Path 
 
 import streamlit as st
 from pypdf import PdfReader
 
-from main import (
-    build_search_index,
+# Main logic aur UI ke liye helper functions ko yahan se import karte hain.
+from main import ( 
+    build_search_index, 
     chunk_text,
     create_embeddings,
     find_relevant_chunks,
     generate_extractive_answer,
 )
 
-
-def inject_custom_css():
-    # STEP 1: UI styling yahan apply hoti hai.
-    # Small project ke liye internal CSS theek hai; larger project me external CSS zyada clean hoti hai.
-    css_path = Path(__file__).resolve().parent / "styles" / "app.css"
-    if not css_path.exists():
+#extrenal CSS file se custom styles inject karne ke liye function.
+def inject_custom_css(): 
+    css_path = Path(__file__).resolve().parent / "styles" / "app.css" #PATH 
+    if not css_path.exists(): 
         return
 
-    css = css_path.read_text(encoding="utf-8")
-    st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
+    css = css_path.read_text(encoding="utf-8") 
+    st.markdown(f"<style>{css}</style>", unsafe_allow_html=True) # Inject custom CSS
 
-
-def read_uploaded_documents(uploaded_files):
-    """
-    STEP 2: Uploaded files ka text read karna.
-    Return format: [(source_label, text_content), ...]
-    """
+# Uploaded PDF aur TXT files se text nikalne ke liye function.
+def read_uploaded_documents(uploaded_files): 
     all_documents = []
-    for uploaded in uploaded_files:
+    for uploaded in uploaded_files: # Har uploaded file ke liye uska name aur suffix nikalte hain.
         name = uploaded.name
-        suffix = os.path.splitext(name)[1].lower()
+        suffix = os.path.splitext(name)[1].lower() #SUFFIX PDF ya TXT hona chahiye, warna ignore kar denge.
 
-        if suffix == ".pdf": #
+        if suffix == ".pdf": 
             # PDF se page-wise text nikalte hain.
             pdf_reader = PdfReader(io.BytesIO(uploaded.getvalue()))
             for i, page in enumerate(pdf_reader.pages, start=1):
@@ -45,28 +40,22 @@ def read_uploaded_documents(uploaded_files):
                     all_documents.append((f"{name} - Page {i}", page_text))
         elif suffix == ".txt":
             # TXT file ko direct text me convert karte hain.
-            text = uploaded.getvalue().decode("utf-8", errors="ignore")
+            text = uploaded.getvalue().decode("utf-8", errors="ignore") #UTF-8 decode karte hain, errors ignore karte hain taaki koi bhi non-text content problem na kare.
             if text.strip():
                 all_documents.append((name, text))
 
     return all_documents
 
-
+# Uploaded documents ko RAG knowledge base me convert karne ke liye function.
+#Flow: documents -> chunks -> embeddings -> FAISS index
 def build_knowledge_base(uploaded_files):
-    """
-    STEP 3: RAG knowledge base banana.
-    Flow: documents -> chunks -> embeddings -> FAISS index
-    """
     documents = read_uploaded_documents(uploaded_files)
     if not documents:
         return None
-
-    # Text ko small chunks me todte hain.
-    chunks = chunk_text(documents)
-    # Har chunk ka embedding banate hain.
+    #YAHA MAIN.PY KE LOGIC USE HO RAHE HE JO HAMNE IMPORT KIYE THE.
+    chunks = chunk_text(documents) 
     embeddings, model = create_embeddings(chunks)
-    # Fast search ke liye FAISS index banate hain.
-    index = build_search_index(embeddings)
+    index = build_search_index(embeddings) 
 
     return {
         "chunks": chunks,
@@ -74,20 +63,18 @@ def build_knowledge_base(uploaded_files):
         "index": index,
     }
 
-
+#Gemini Flash se final answer banana.
+#Yeh function retrieved context ko prompt me bhejta hai.
 def generate_with_flash(api_key, question, relevant_chunks):
-    """
-    STEP 4: Gemini Flash se final answer banana.
-    Yeh function retrieved context ko prompt me bhejta hai.
-    """
-    import google.generativeai as genai
+    
+    import google.generativeai as genai #LIBRARY IMPORT FOR GEMINI FLASH ANSWER GENERATION
 
-    # Sirf retrieved context prompt me bhejte hain.
-    context = "\n\n".join(
+    # Flash models ko context ke sath prompt bhejne ke liye format karte hain.
+    context = "\n\n".join( 
         [f"Source: {chunk['source']}\nText: {chunk['text']}" for chunk in relevant_chunks]
     )
 
-    prompt = f"""
+    prompt = f"""  
 You are an academic assistant. Answer only from the given context.
 
 Rules:
@@ -143,23 +130,24 @@ Context:
 
 
 def init_state():
-    # STEP 5: Session state initialize karna.
-    # Isse rerun par data reset nahi hota.
-    if "kb" not in st.session_state:
+    # Knowledge base, chat history, aur uploaded file names ke liye session state variables banate hain.
+    # Agar yeh variables pehle se exist nahi karte, to unhe initialize kar dete hain.
+    # Isse hota yeh hai ki user jab naye question ke liye app ko rerun karega, to uska previous data loss nahi hoga.
+    if "kb" not in st.session_state: 
         st.session_state.kb = None
-    if "chat" not in st.session_state:
+    if "chat" not in st.session_state: 
         st.session_state.chat = []
     if "uploaded_names" not in st.session_state:
         st.session_state.uploaded_names = []
 
-
+#API KEY LENA
 def get_configured_api_key():
     # API key pehle secrets se, phir environment se aati hai.
     if "GEMINI_API_KEY" in st.secrets:
         return st.secrets["GEMINI_API_KEY"]
-    return os.getenv("GEMINI_API_KEY", "")
+    return os.getenv("GEMINI_API_KEY", "") 
 
-
+#
 def running_inside_streamlit():
     # Check karta hai app Streamlit ke andar chal raha hai ya nahi.
     try:

@@ -18,146 +18,12 @@ from main import (
 def inject_custom_css():
     # STEP 1: UI styling yahan apply hoti hai.
     # Small project ke liye internal CSS theek hai; larger project me external CSS zyada clean hoti hai.
-    st.markdown(
-        """
-        <style>
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+    css_path = Path(__file__).resolve().parent / "styles" / "app.css"
+    if not css_path.exists():
+        return
 
-        :root {
-            --bg-main: linear-gradient(180deg, #f7fbff 0%, #eef5ff 45%, #f7f9fc 100%);
-            --text-main: #11233f;
-            --muted: #53627b;
-            --accent: #116a7b;
-            --border: rgba(17, 35, 63, 0.14);
-        }
-
-        .stApp {
-            background: var(--bg-main);
-            color: var(--text-main);
-            font-family: 'IBM Plex Sans', sans-serif;
-        }
-
-        h1, h2, h3, [data-testid="stSidebar"] h2 {
-            font-family: 'Outfit', sans-serif !important;
-            letter-spacing: 0.1px;
-        }
-
-        .clean-card {
-            background: rgba(255, 255, 255, 0.84);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 0.9rem 1rem;
-            margin-bottom: 1rem;
-            box-shadow: 0 6px 16px rgba(11, 24, 45, 0.05);
-        }
-
-        .muted {
-            color: var(--muted);
-            font-size: 0.93rem;
-        }
-
-        .status-pill {
-            display: inline-block;
-            border: 1px solid rgba(17, 106, 123, 0.25);
-            background: rgba(17, 106, 123, 0.08);
-            color: #0f5160;
-            border-radius: 999px;
-            padding: 0.2rem 0.62rem;
-            font-size: 0.78rem;
-            font-weight: 600;
-            margin-top: 0.35rem;
-            margin-bottom: 0.5rem;
-        }
-
-        [data-testid="stSidebar"] {
-            background: rgba(255, 255, 255, 0.78);
-            border-right: 1px solid var(--border);
-        }
-
-        [data-testid="stSidebar"] .stButton > button,
-        .stButton > button {
-            border-radius: 10px;
-            border: 1px solid var(--border);
-        }
-
-        .source-box {
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 0.45rem 0.6rem;
-            margin-top: 0.35rem;
-            background: rgba(255, 255, 255, 0.76);
-        }
-
-        .answer-shell {
-            background: rgba(255, 255, 255, 0.9);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 1rem 1.05rem;
-            margin-top: 0.35rem;
-            box-shadow: 0 6px 16px rgba(11, 24, 45, 0.05);
-        }
-
-        .answer-label {
-            font-size: 0.82rem;
-            font-weight: 700;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-            color: var(--accent);
-            margin-bottom: 0.45rem;
-        }
-
-        .answer-text {
-            font-size: 0.98rem;
-            line-height: 1.65;
-            color: var(--text-main);
-        }
-
-        .source-wrap {
-            margin-top: 0.75rem;
-        }
-
-        .source-title {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--muted);
-            margin-bottom: 0.35rem;
-        }
-
-        .source-pill {
-            display: inline-block;
-            padding: 0.28rem 0.65rem;
-            margin: 0.18rem 0.28rem 0 0;
-            border-radius: 999px;
-            border: 1px solid rgba(17, 106, 123, 0.18);
-            background: rgba(17, 106, 123, 0.08);
-            color: #0f5160;
-            font-size: 0.85rem;
-        }
-
-        .source-preview {
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 0.65rem 0.75rem;
-            margin-top: 0.45rem;
-            background: rgba(255, 255, 255, 0.7);
-        }
-
-        .source-preview-title {
-            font-size: 0.84rem;
-            font-weight: 700;
-            color: #0f5160;
-            margin-bottom: 0.25rem;
-        }
-
-        .source-preview-text {
-            font-size: 0.88rem;
-            color: var(--muted);
-            line-height: 1.5;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+    css = css_path.read_text(encoding="utf-8")
+    st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
 
 
 def read_uploaded_documents(uploaded_files):
@@ -170,7 +36,7 @@ def read_uploaded_documents(uploaded_files):
         name = uploaded.name
         suffix = os.path.splitext(name)[1].lower()
 
-        if suffix == ".pdf":
+        if suffix == ".pdf": #
             # PDF se page-wise text nikalte hain.
             pdf_reader = PdfReader(io.BytesIO(uploaded.getvalue()))
             for i, page in enumerate(pdf_reader.pages, start=1):

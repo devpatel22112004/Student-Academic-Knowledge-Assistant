@@ -204,45 +204,44 @@ def main():
     st.markdown("<h2>Study Workspace</h2>", unsafe_allow_html=True)
     st.markdown('<div class="muted">Upload your notes, process once, then ask questions with grounded answers.</div>', unsafe_allow_html=True)
 
-    # API key background me secrets/env se load hoti hai.
+    
     api_key = get_configured_api_key().strip()
 
-    # Left sidebar me sirf upload aur process rakha hai.
     with st.sidebar:
-        st.markdown("## Workspace")
-        st.markdown("### Upload Notes")
+        st.markdown("Workspace")
+        st.markdown("Upload Your Notes")
         files = st.file_uploader(
             "Upload PDF or TXT",
             type=["pdf", "txt"],
             accept_multiple_files=True,
             help="You can upload multiple notes files.",
         )
-
+       
         if st.button("Process Documents", use_container_width=True):
             if not files:
                 st.warning("Please upload at least one PDF or TXT file.")
             else:
                 # Uploaded files ka index ready karte hain taaki question-answer possible ho.
                 with st.spinner("Indexing your documents..."):
-                    kb = build_knowledge_base(files)
+                    kb = build_knowledge_base(files) 
                 if kb is None:
                     st.error("Uploaded files had no readable text.")
                 else:
                     st.session_state.kb = kb
                     st.session_state.uploaded_names = [f.name for f in files]
                     st.success("Documents processed. You can ask questions now.")
-
+        
         if st.session_state.kb is not None:
             st.markdown('<div class="status-pill">Ready</div>', unsafe_allow_html=True)
 
         if st.session_state.uploaded_names:
-            st.markdown("### Uploaded Files")
+            st.markdown(" Your Uploaded Files")
             for name in st.session_state.uploaded_names:
                 st.markdown(f"- {name}")
 
     # Main area me user question aur answer render hota hai.
-    st.markdown("### Ask Questions")
-
+    st.markdown("Ask Your Questions")
+    
     question = st.chat_input("Type your academic question here...")
 
     if question:
@@ -258,7 +257,7 @@ def main():
                 kb["model"],
                 num_results=5,
             )
-
+            
             if api_key.strip():
                 try:
                     with st.spinner("Generating answer..."):
@@ -283,9 +282,8 @@ def main():
                     "source_items": prepare_source_items(relevant),
                 }
             )
-
+    #letest chat upper rakhta he
     if st.session_state.chat:
-        # Latest chat sabse upar dikhate hain.
         for item in reversed(st.session_state.chat):
             with st.chat_message("user"):
                 st.markdown(item["question"])
@@ -301,14 +299,14 @@ def main():
                     unsafe_allow_html=True,
                 )
 
-                # Sources ko short pills me dikhate hain taaki clutter na lage.
+                # Sources ko visually distinct pills me render karte hain.
                 st.markdown('<div class="source-wrap">', unsafe_allow_html=True)
                 st.markdown('<div class="source-title">Sources used</div>', unsafe_allow_html=True)
                 for src in item["sources"]:
                     st.markdown(f'<span class="source-pill">{src}</span>', unsafe_allow_html=True)
                 st.markdown('</div>', unsafe_allow_html=True)
 
-                # Professional source panel: source name + short retrieved snippet.
+                #expand karke dekhne ke liye
                 with st.expander("View source details"):
                     for source_item in item.get("source_items", []):
                         st.markdown(
@@ -319,7 +317,9 @@ def main():
                             </div>
                             ''',
                             unsafe_allow_html=True,
-                        )
+                     )
+    
+                        
     else:
         st.info("Upload files, process them, and ask your first question.")
 

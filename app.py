@@ -92,7 +92,7 @@ Context:
     # API key set karne ke baad hi model call hota hai.
     genai.configure(api_key=api_key)
 
-    # Available Flash models me se supported model choose karte hain.
+    # Flash models ke liye preference order define karte hain. Jo pehle available hoga, use karenge.
     preferred = [
         "models/gemini-2.5-flash",
         "models/gemini-2.0-flash",
@@ -100,25 +100,28 @@ Context:
         "models/gemini-1.5-flash",
     ]
 
+    # Available models me se Flash supported model ko select karte hain.
     available = []
     for model_info in genai.list_models():
         methods = getattr(model_info, "supported_generation_methods", [])
         if "generateContent" in methods:
             available.append(model_info.name)
 
+    # Preferred order me se pehla available model select karte hain.
     model_name = None
     for candidate in preferred:
         if candidate in available:
             model_name = candidate
             break
 
+    # Agar preferred models me se koi bhi available nahi hai, to kisi bhi Flash supported model ko select kar lete hain.
     if model_name is None:
-        flash_models = [m for m in available if "flash" in m.lower()]
+        flash_models = [m for m in available if "flash" in m.lower()] #
         if flash_models:
-            model_name = flash_models[0]
-
+            model_name = flash_models[0] 
+ 
     if model_name is None:
-        raise RuntimeError("No supported Flash model is available for this API key.")
+        raise RuntimeError("No supported Flash model is available for this API key.") 
 
     # Selected model par answer generate karte hain.
     model = genai.GenerativeModel(model_name)
@@ -147,38 +150,36 @@ def get_configured_api_key():
         return st.secrets["GEMINI_API_KEY"]
     return os.getenv("GEMINI_API_KEY", "") 
 
-#
+# Check karta hai ki app Streamlit ke andar chal raha hai ya nahi, taaki uske hisab se behavior decide kar sake.
 def running_inside_streamlit():
-    # Check karta hai app Streamlit ke andar chal raha hai ya nahi.
     try:
-        from streamlit.runtime.scriptrunner import get_script_run_ctx
+        from streamlit.runtime.scriptrunner import get_script_run_ctx 
 
-        return get_script_run_ctx() is not None
+        return get_script_run_ctx() is not None 
     except Exception:
         return False
 
-
+#source detalis and preview text nikalne ke liye function.
 def prepare_source_items(relevant_chunks):
-    # Same source repeat hone par first useful snippet hi show karte hain.
     source_items = []
-    seen = set()
+    seen = set() #duplicate handle karne ke liye set banate hain.
     for chunk in relevant_chunks:
         src = chunk["source"]
         if src in seen:
             continue
-        seen.add(src)
+        seen.add(src) 
         preview = " ".join(chunk["text"].split())[:240]
         if len(preview) == 240:
-            preview += "..."
+            preview += "..." 
         source_items.append({"source": src, "preview": preview})
     return source_items
 
-
+#direct run button ke liye function
 def launch_streamlit_app():
-    # Agar user direct python app.py chalaye, to Streamlit mode me launch karo.
-    app_path = Path(__file__).resolve()
-    os.execv(
-        sys.executable,
+    app_path = Path(__file__).resolve() 
+    #process switch kanrne ke liye 
+    os.execv( 
+        sys.executable, 
         [
             sys.executable,
             "-m",
@@ -188,17 +189,18 @@ def launch_streamlit_app():
         ],
     )
 
-
+#main function
 def main():
-    # STEP 6: Main app UI start.
-    st.set_page_config(
+    st.set_page_config( 
         page_title="Student Academic Assistant",
         page_icon="📚",
         layout="wide",
     )
-    inject_custom_css()
-    init_state()
 
+    inject_custom_css()
+    init_state() #Session state initialize karte hain taaki knowledge base, chat history, aur uploaded file names store ho sake.
+
+ 
     st.markdown("<h2>Study Workspace</h2>", unsafe_allow_html=True)
     st.markdown('<div class="muted">Upload your notes, process once, then ask questions with grounded answers.</div>', unsafe_allow_html=True)
 

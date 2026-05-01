@@ -14,9 +14,57 @@
     font-family: 'IBM Plex Sans', sans-serif;
 }
 
+[data-testid="stHeaderActionElements"] {
+    display: none;
+}
+
+[data-testid="stHeader"] {
+    background: transparent;
+}
+
 h1, h2, h3, [data-testid="stSidebar"] h2 {
     font-family: 'Outfit', sans-serif !important;
     letter-spacing: 0.1px;
+}
+
+.page-hero,
+.workspace-hero {
+    max-width: 980px;
+    padding: 0.2rem 0 0.9rem;
+}
+
+.page-kicker,
+.workspace-kicker {
+    display: inline-block;
+    border: 1px solid rgba(17, 106, 123, 0.18);
+    background: rgba(17, 106, 123, 0.08);
+    color: #0f5160;
+    border-radius: 999px;
+    padding: 0.24rem 0.72rem;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 0.65rem;
+}
+
+.page-title,
+.workspace-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: clamp(2rem, 4vw, 3.1rem);
+    font-weight: 800;
+    line-height: 1.05;
+    color: var(--text-main);
+    letter-spacing: -0.02em;
+    margin-bottom: 0.55rem;
+}
+
+.page-subtitle,
+.workspace-subtitle {
+    max-width: 760px;
+    font-size: 1rem;
+    line-height: 1.65;
+    color: var(--muted);
 }
 
 .clean-card {
@@ -31,6 +79,125 @@ h1, h2, h3, [data-testid="stSidebar"] h2 {
 .muted {
     color: var(--muted);
     font-size: 0.93rem;
+}
+
+.auth-shell {
+    max-width: 480px;
+    padding: 0.8rem 0;
+}
+
+.auth-hero {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 800;
+    line-height: 1.15;
+    color: var(--text-main);
+    margin-bottom: 0.6rem;
+}
+
+.auth-subtitle {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--muted);
+    max-width: 460px;
+}
+
+.auth-panel-head {
+    padding: 0 0 0.6rem 0;
+}
+
+.auth-card-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--text-main);
+    margin-bottom: 0.1rem;
+}
+
+.auth-card .stTabs [data-baseweb="tab-list"] {
+    gap: 0.25rem;
+}
+
+.auth-card .stTabs,
+.auth-panel-head + div {
+    background: rgba(255, 255, 255, 0.84);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    box-shadow: 0 10px 26px rgba(11, 24, 45, 0.06);
+    padding: 0.85rem 1rem 0.5rem;
+}
+
+.auth-card .stTabs {
+    padding-top: 0.55rem;
+}
+
+.auth-card .stTabs [data-baseweb="tab"] {
+    font-weight: 600;
+    border-radius: 10px 10px 0 0;
+    padding: 0.45rem 0.85rem;
+}
+
+.auth-card .stTabs [aria-selected="true"] {
+    background: rgba(17, 106, 123, 0.08);
+    color: #0f5160;
+}
+
+.auth-card .stTextInput input {
+    border-radius: 12px;
+    border-color: rgba(17, 35, 63, 0.16);
+}
+
+.auth-card .stForm {
+    padding-top: 0.35rem;
+}
+
+.auth-form-tip {
+    font-size: 0.86rem;
+    color: var(--muted);
+    line-height: 1.5;
+    margin-bottom: 0.7rem;
+}
+
+.auth-card .stTextInput > label {
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.auth-card .stTextInput input::placeholder {
+    color: #8a96aa;
+}
+
+.auth-card .stButton > button {
+    height: 2.7rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, rgba(17, 106, 123, 0.96), rgba(17, 106, 123, 0.86));
+    color: #ffffff;
+    border: 0;
+    box-shadow: 0 10px 22px rgba(17, 106, 123, 0.18);
+}
+
+.auth-card .stButton > button:hover {
+    background: linear-gradient(135deg, rgba(14, 92, 108, 0.98), rgba(17, 106, 123, 0.92));
+    border: 0;
+}
+
+.stTabs [data-baseweb="tab-panel"] {
+    padding-top: 0.8rem;
+}
+
+.stTabs [data-baseweb="tab-panel"] .stForm {
+    margin-bottom: 0.15rem;
+}
+
+.stMarkdown p {
+    margin-bottom: 0;
+}
+
+@media (max-width: 880px) {
+    .auth-points {
+        grid-template-columns: 1fr;
+    }
 }
 
 .status-pill {
@@ -55,6 +222,184 @@ h1, h2, h3, [data-testid="stSidebar"] h2 {
 .stButton > button {
     border-radius: 10px;
     border: 1px solid var(--border);
+}
+
+.auth-user-card {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    background: rgba(255, 255, 255, 0.82);
+    border: 1px solid rgba(17, 35, 63, 0.1);
+    border-radius: 16px;
+    padding: 0.85rem 0.9rem;
+    margin: 0.1rem 0 0.85rem;
+    box-shadow: 0 6px 16px rgba(11, 24, 45, 0.04);
+}
+
+.popover-account {
+    padding: 0.2rem 0 0.7rem;
+}
+
+.popover-account-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    color: var(--muted);
+    margin-bottom: 0.15rem;
+}
+
+.popover-account-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-main);
+    line-height: 1.25;
+}
+
+.popover-account-mail {
+    font-size: 0.88rem;
+    color: var(--muted);
+    line-height: 1.3;
+    margin-top: 0.1rem;
+    word-break: break-word;
+}
+
+[data-testid="stPopover"] button {
+    border-radius: 10px;
+    border: 1px solid var(--border);
+}
+
+[data-testid="stSidebar"] [data-testid="stPopover"] > button {
+    width: 3.6rem !important;
+    height: 3.6rem !important;
+    min-width: 3.6rem !important;
+    min-height: 3.6rem !important;
+    max-width: 3.6rem !important;
+    max-height: 3.6rem !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 50% !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.15rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    color: #0f5160;
+    flex-shrink: 0;
+    background:
+        radial-gradient(circle at 28% 26%, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.15) 40%),
+        linear-gradient(135deg, #116a7b 0%, #0f5160 100%);
+    border: 1.5px solid rgba(17, 106, 123, 0.32);
+    box-shadow: 
+        0 0 0 1px rgba(17, 106, 123, 0.08),
+        0 12px 26px rgba(17, 106, 123, 0.14),
+        inset 0 1px 2px rgba(255, 255, 255, 0.6);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-testid="stSidebar"] [data-testid="stPopover"] > button svg {
+    display: none !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stPopover"] > button:hover {
+    background:
+        radial-gradient(circle at 28% 26%, rgba(255, 255, 255, 0.88) 0%, rgba(255, 255, 255, 0.2) 40%),
+        linear-gradient(135deg, #0f5160 0%, #0d3f4d 100%);
+    border-color: rgba(17, 106, 123, 0.44);
+    transform: translateY(-3px);
+    box-shadow: 
+        0 0 0 1px rgba(17, 106, 123, 0.12),
+        0 16px 32px rgba(17, 106, 123, 0.18),
+        inset 0 1px 2px rgba(255, 255, 255, 0.7);
+}
+
+[data-testid="stSidebar"] [data-testid="stPopover"] > button:active {
+    transform: translateY(-1px);
+    box-shadow: 
+        0 0 0 1px rgba(17, 106, 123, 0.2),
+        0 8px 16px rgba(17, 106, 123, 0.12),
+        inset 0 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+[data-testid="stPopover"] > div {
+    border-radius: 18px;
+    border: 1px solid rgba(17, 35, 63, 0.12);
+    box-shadow: 0 16px 34px rgba(11, 24, 45, 0.14);
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(10px);
+}
+
+.popover-account {
+    padding: 0.1rem 0 0.75rem;
+}
+
+.popover-account-label {
+    display: inline-block;
+    background: rgba(17, 106, 123, 0.08);
+    border: 1px solid rgba(17, 106, 123, 0.14);
+    color: #0f5160;
+    border-radius: 999px;
+    padding: 0.18rem 0.55rem;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 0.55rem;
+}
+
+.popover-account-name {
+    font-size: 1.02rem;
+    font-weight: 800;
+    color: var(--text-main);
+    line-height: 1.25;
+}
+
+.popover-account-mail {
+    font-size: 0.86rem;
+    color: var(--muted);
+    line-height: 1.35;
+    margin-top: 0.2rem;
+    word-break: break-word;
+}
+
+[data-testid="stPopover"] .stButton > button {
+    margin-top: 0.2rem;
+    border-radius: 999px;
+    height: 2.5rem;
+    font-weight: 700;
+    color: #0f5160;
+    background: rgba(17, 106, 123, 0.08);
+    border: 1px solid rgba(17, 106, 123, 0.18);
+    box-shadow: none;
+}
+
+[data-testid="stPopover"] .stButton > button:hover {
+    background: rgba(17, 106, 123, 0.12);
+    border-color: rgba(17, 106, 123, 0.24);
+}
+
+.sidebar-section-title {
+    font-size: 0.84rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-main);
+    margin-top: 0.35rem;
+}
+
+.sidebar-section-subtitle {
+    font-size: 0.88rem;
+    color: var(--muted);
+    line-height: 1.5;
+    margin-top: 0.25rem;
+}
+
+.sidebar-divider {
+    height: 1px;
+    background: rgba(17, 35, 63, 0.1);
+    margin: 0.85rem 0 0.8rem;
 }
 
 .source-box {

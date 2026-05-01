@@ -1,4 +1,5 @@
 import io # file ko savekare bina uska memory me handle karna.
+import hashlib # password ko plain text me store karne se bachane ke liye.
 import os # File handling aur environment variables ke liye.
 import sys # python progrmam ka system level interaction ke liye.
 from pathlib import Path 
@@ -142,6 +143,137 @@ def init_state():
         st.session_state.chat = []
     if "uploaded_names" not in st.session_state:
         st.session_state.uploaded_names = []
+    if "users" not in st.session_state:
+        st.session_state.users = {}
+    if "authenticated" not in st.session_state:
+        st.session_state.authenticated = False
+    if "current_user" not in st.session_state:
+        st.session_state.current_user = None
+
+
+def hash_password(password):
+    # Prototype auth ke liye password ko hash karke store karte hain.
+    return hashlib.sha256(password.encode("utf-8")).hexdigest()
+
+
+def render_auth_screen():
+    # Page ke top par short product title aur tagline dikhate hain.
+    st.markdown(
+        """
+        <div class="page-hero">
+            <div class="page-title">Your Study Partner</div>
+            <div class="page-subtitle">Smart answers from your notes.</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # Screen ko do parts me divide karte hain: left side intro, right side auth form.
+    left_col, right_col = st.columns([0.95, 1.05], gap="large")
+
+    with left_col:
+        # Left panel me simple benefit text rakhte hain taaki screen friendly lage.
+        st.markdown(
+            """
+            <div class="auth-shell">
+                <div class="auth-hero">Upload once. Search forever.</div>
+                <div class="auth-subtitle">
+                    Keep your PDFs, ask questions anytime, get real answers.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with right_col:
+        # Right side par short header dikhate hain jo user ko form ka purpose batata hai.
+        st.markdown(
+            """
+            <div class="auth-panel-head">
+                <div class="auth-card-title">Jump in</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        # Login aur Register ko tabs me rakha hai taaki UI compact rahe.
+        login_tab, register_tab = st.tabs(["Login", "Register"])
+
+        with login_tab:
+            # Login form me email aur password lete hain.
+            with st.form("login_form", clear_on_submit=False):
+                # Chhota helper text user ko context deta hai.
+                st.markdown('<div class="auth-form-tip">Welcome back! Let\'s pick up where you left off.</div>', unsafe_allow_html=True)
+                # Email field: existing account ko identify karne ke liye.
+                login_email = st.text_input("Email address", placeholder="name@example.com")
+                # Password field: hidden input, security ke liye.
+                login_password = st.text_input("Password", type="password", placeholder="Enter your password")
+                # Form submit button.
+                login_submit = st.form_submit_button("Sign in", use_container_width=True)
+
+            # Button click hone ke baad credentials validate karte hain.
+            if login_submit:
+                # Email ko normalize karke user lookup karte hain.
+                user = st.session_state.users.get(login_email.strip().lower())
+                if not user:
+                    # Agar user nahi mila to register karne ke liye bolte hain.
+                    st.error("User not found. Please register first.")
+                elif user["password"] != hash_password(login_password):
+                    # Password hash mismatch hone par login reject karte hain.
+                    st.error("Invalid password.")
+                else:
+                    # Successful login par session state me auth flag set hota hai.
+                    st.session_state.authenticated = True
+                    # Current user ka data session me store hota hai.
+                    st.session_state.current_user = user
+                    # User ko success message dikhate hain.
+                    st.success(f"Welcome back, {user['name']}!")
+                    # Rerun se app auth screen se main workspace me chali jati hai.
+                    st.rerun()
+
+        with register_tab:
+            # Register form me new account ke liye details lete hain.
+            with st.form("register_form", clear_on_submit=False):
+                # Chhota helper text form ko friendly banata hai.
+                st.markdown('<div class="auth-form-tip">Create your account. Keep all your notes in one place.</div>', unsafe_allow_html=True)
+                # Naam field: account owner ka display name.
+                reg_name = st.text_input("Full name", placeholder="Your name")
+                # Email field: future login ke liye unique key.
+                reg_email = st.text_input("Email address", placeholder="name@example.com")
+                # Password field: new account password.
+                reg_password = st.text_input("Create password", type="password", placeholder="Set a strong password")
+                # Confirm password field: typo avoid karne ke liye.
+                reg_confirm = st.text_input("Confirm password", type="password", placeholder="Repeat your password")
+                # Account create button.
+                register_submit = st.form_submit_button("Create account", use_container_width=True)
+
+            # Register button click hone par validation + save hota hai.
+            if register_submit:
+                # Email ko clean format me lete hain.
+                email_key = reg_email.strip().lower()
+                if not reg_name.strip() or not email_key or not reg_password:
+                    # Blank values allow nahi karte.
+                    st.error("Name, email, and password are required.")
+                elif reg_password != reg_confirm:
+                    # Dono password same hone chahiye.
+                    st.error("Passwords do not match.")
+                elif email_key in st.session_state.users:
+                    # Same email pe duplicate account nahi banana.
+                    st.error("This email is already registered.")
+                else:
+                    # User data ko session_state me save karte hain.
+                    st.session_state.users[email_key] = {
+                        "name": reg_name.strip(),
+                        "email": email_key,
+                        # Password plain text me nahi, hash form me save hota hai.
+                        "password": hash_password(reg_password),
+                    }
+                    # Register ke baad user ko automatically logged in mark kar dete hain.
+                    st.session_state.authenticated = True
+                    # Current user ka record session me set hota hai.
+                    st.session_state.current_user = st.session_state.users[email_key]
+                    # Success message ke baad main app me rerun hota hai.
+                    st.success("Account created successfully.")
+                    st.rerun()
 
 #API KEY LENA
 def get_configured_api_key():
@@ -200,54 +332,114 @@ def main():
     inject_custom_css()
     init_state() #Session state initialize karte hain taaki knowledge base, chat history, aur uploaded file names store ho sake.
 
+    if not st.session_state.authenticated:
+        render_auth_screen()
+        return
+
  
-    st.markdown("<h2>Study Workspace</h2>", unsafe_allow_html=True)
-    st.markdown('<div class="muted">Upload your notes, process once, then ask questions with grounded answers.</div>', unsafe_allow_html=True)
+    st.markdown(
+        """
+        <div class="workspace-hero">
+            <div class="workspace-kicker">Your workspace</div>
+            <div class="workspace-title">Study Hub</div>
+            <div class="workspace-subtitle">Upload PDFs. Ask questions. Get answers from your notes.</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     
     api_key = get_configured_api_key().strip()
 
     with st.sidebar:
-        st.markdown("Workspace")
-        st.markdown("Upload Your Notes")
+        if st.session_state.current_user:
+            # User ka short monogram nikalte hain taaki avatar button compact rahe.
+            user_initial = "".join(part[0] for part in st.session_state.current_user["name"].split()[:2]).upper()
+            if not user_initial:
+                # Agar naam unexpected ho to first letter fallback use karte hain.
+                user_initial = st.session_state.current_user["name"][0].upper()
+            # Round avatar button click karne par popover open hota hai.
+            with st.popover(user_initial):
+                # Popover me current account details show karte hain.
+                st.markdown(
+                    f'''
+                    <div class="popover-account">
+                        <div class="popover-account-label">Logged in account</div>
+                        <div class="popover-account-name">{st.session_state.current_user["name"]}</div>
+                        <div class="popover-account-mail">{st.session_state.current_user["email"]}</div>
+                    </div>
+                    ''',
+                    unsafe_allow_html=True,
+                )
+                # Sign out click hone par session reset karke login screen par bhejte hain.
+                if st.button("Sign out", use_container_width=True, key="sidebar_signout_button"):
+                    # Authentication flag off karte hain.
+                    st.session_state.authenticated = False
+                    # Current user clear karte hain.
+                    st.session_state.current_user = None
+                    # Processed knowledge base reset hota hai.
+                    st.session_state.kb = None
+                    # Chat history clear hoti hai.
+                    st.session_state.chat = []
+                    # Uploaded file list clear hoti hai.
+                    st.session_state.uploaded_names = []
+                    # UI ko fresh auth screen par rerun karte hain.
+                    st.rerun()
+        st.markdown('<div class="sidebar-section-title">Workspace</div>', unsafe_allow_html=True)
+        st.markdown('<div class="sidebar-section-subtitle">Upload your PDFs here. Search them whenever you need.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
+        # File uploader user se PDFs/TXT leta hai.
         files = st.file_uploader(
             "Upload PDF or TXT",
             type=["pdf", "txt"],
             accept_multiple_files=True,
-            help="You can upload multiple notes files.",
+            help="Upload as many files as you want.",
         )
        
+        # Process button click hone par uploaded files ko knowledge base me convert karte hain.
         if st.button("Process Documents", use_container_width=True):
             if not files:
+                # Agar file nahi hai to warning dikhate hain.
                 st.warning("Please upload at least one PDF or TXT file.")
             else:
                 # Uploaded files ka index ready karte hain taaki question-answer possible ho.
-                with st.spinner("Indexing your documents..."):
+                with st.spinner("Processing your files..."):
+                    # File reading, chunking, embedding aur index building yahan hota hai.
                     kb = build_knowledge_base(files) 
                 if kb is None:
+                    # Agar text extract nahi hua to error dikhate hain.
                     st.error("Uploaded files had no readable text.")
                 else:
+                    # Knowledge base session me store kar dete hain.
                     st.session_state.kb = kb
+                    # Uploaded file names bhi session me save karte hain.
                     st.session_state.uploaded_names = [f.name for f in files]
-                    st.success("Documents processed. You can ask questions now.")
+                    # Success message user ko confirm karta hai ke files ready hain.
+                    st.success("All set! Now you can ask your questions.")
         
         if st.session_state.kb is not None:
+            # Ready badge sirf tab dikhate hain jab knowledge base available ho.
             st.markdown('<div class="status-pill">Ready</div>', unsafe_allow_html=True)
 
         if st.session_state.uploaded_names:
+            # Uploaded file list user ko quick overview deti hai.
             st.markdown(" Your Uploaded Files")
             for name in st.session_state.uploaded_names:
                 st.markdown(f"- {name}")
 
     # Main area me user question aur answer render hota hai.
-    st.markdown("Ask Your Questions")
+    # Main question section ka short title.
+    st.markdown("Ask Away")
     
-    question = st.chat_input("Type your academic question here...")
+    # Chat input se user ka next question aata hai.
+    question = st.chat_input("What do you want to know?")
 
     if question:
         if st.session_state.kb is None:
+            # Documents process kiye bina answer generate nahi hota.
             st.warning("Please upload and process documents first.")
         else:
+            # Saved knowledge base ko local variable me lete hain.
             kb = st.session_state.kb
             # Question ke liye top relevant chunks nikalte hain.
             relevant = find_relevant_chunks(
@@ -260,20 +452,24 @@ def main():
             
             if api_key.strip():
                 try:
+                    # API key available ho to Gemini Flash se answer banate hain.
                     with st.spinner("Generating answer..."):
                         # Primary path: Gemini Flash answer.
                         answer_text = generate_with_flash(api_key.strip(), question, relevant)
                 except Exception:
                     # Fallback: local extractive answer.
+                    # Agar AI model fail ho jaye to uploaded text se direct answer nikalte hain.
                     fallback, _ = generate_extractive_answer(question, relevant)
                     st.warning("AI model response unavailable right now. Showing grounded answer from your uploaded files.")
                     answer_text = fallback
             else:
                 # API key na ho to local mode use hota hai.
+                # Bina API key ke bhi grounded extractive answer milta rahe.
                 fallback, _ = generate_extractive_answer(question, relevant)
                 answer_text = fallback
 
             # New question-answer chat history me save hota hai.
+            # Ye history session me rehti hai taaki rerun ke baad bhi chat dikh sake.
             st.session_state.chat.append(
                 {
                     "question": question,

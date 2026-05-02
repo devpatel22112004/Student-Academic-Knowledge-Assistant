@@ -190,7 +190,7 @@ def render_auth_screen():
         st.markdown(
             """
             <div class="auth-panel-head">
-                <div class="auth-card-title">Jump in</div>
+                <div class="auth-card-title">Be a Happy Student</div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -341,7 +341,7 @@ def main():
         """
         <div class="workspace-hero">
             <div class="workspace-kicker">Your workspace</div>
-            <div class="workspace-title">Study Hub</div>
+            <div class="workspace-title">Study Friend</div>
             <div class="workspace-subtitle">Upload PDFs. Ask questions. Get answers from your notes.</div>
         </div>
         """,

@@ -14,7 +14,7 @@ pypdf
 # numpy: numpy arrays ko handle karne ke liye embeddings ke saath
 numpy
 
-# streamlit: UI with file upload and chat experience
+# streamlit: notebook-style web UI with file upload and chat experience
 streamlit
 
 # google-generativeai: Gemini Flash model API integration

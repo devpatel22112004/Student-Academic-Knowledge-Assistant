@@ -1,6 +1,7 @@
 import io # file ko savekare bina uska memory me handle karna.
 import hashlib # password ko plain text me store karne se bachane ke liye.
 import os # File handling aur environment variables ke liye.
+import re
 import sys # python progrmam ka system level interaction ke liye.
 from pathlib import Path 
 
@@ -156,13 +157,31 @@ def hash_password(password):
     return hashlib.sha256(password.encode("utf-8")).hexdigest()
 
 
+def is_valid_email(email):
+    # Basic email format check: name@domain.tld
+    pattern = r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
+    return re.match(pattern, email) is not None
+
+
+def validate_password(password):
+    # User requirement ke hisaab se min length 4 rakhi hai, saath me basic strength checks.
+    if len(password) < 4:
+        return "Password must be at least 4 characters long."
+    if not re.search(r"[A-Za-z]", password):
+        return "Password must include at least one letter."
+    if not re.search(r"\d", password):
+        return "Password must include at least one number."
+    return None
+
+
 def render_auth_screen():
     # Page ke top par short product title aur tagline dikhate hain.
     st.markdown(
         """
         <div class="page-hero">
+            <div class="page-kicker">Student Knowledge Assistant</div>
             <div class="page-title">Your Study Partner</div>
-            <div class="page-subtitle">Smart answers from your notes.</div>
+            <div class="page-subtitle">Smart answers from your notes, anytime and anywhere.</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -176,9 +195,9 @@ def render_auth_screen():
         st.markdown(
             """
             <div class="auth-shell">
-                <div class="auth-hero">Upload once. Search forever.</div>
+                <div class="auth-hero">Simple, fast study assistant.</div>
                 <div class="auth-subtitle">
-                    Keep your PDFs, ask questions anytime, get real answers.
+                    Login or register to manage your files and continue your learning flow.
                 </div>
             </div>
             """,
@@ -189,12 +208,16 @@ def render_auth_screen():
         # Right side par short header dikhate hain jo user ko form ka purpose batata hai.
         st.markdown(
             """
-            <div class="auth-panel-head">
-                <div class="auth-card-title">Be a Happy Student</div>
+            <div class="auth-card">
+                <div class="auth-panel-head">
+                    <div class="auth-card-title">Welcome</div>
+                    <div class="auth-card-subtitle">Sign in or create your account.</div>
+                </div>
             </div>
             """,
             unsafe_allow_html=True,
         )
+        st.markdown('<div class="auth-card">', unsafe_allow_html=True)
         # Login aur Register ko tabs me rakha hai taaki UI compact rahe.
         login_tab, register_tab = st.tabs(["Login", "Register"])
 
@@ -212,8 +235,15 @@ def render_auth_screen():
 
             # Button click hone ke baad credentials validate karte hain.
             if login_submit:
+                login_email_key = login_email.strip().lower()
+                if not login_email_key or not login_password:
+                    st.error("Email and password are required.")
+                    return
+                if not is_valid_email(login_email_key):
+                    st.error("Please enter a valid email address.")
+                    return
                 # Email ko normalize karke user lookup karte hain.
-                user = st.session_state.users.get(login_email.strip().lower())
+                user = st.session_state.users.get(login_email_key)
                 if not user:
                     # Agar user nahi mila to register karne ke liye bolte hain.
                     st.error("User not found. Please register first.")
@@ -250,30 +280,41 @@ def render_auth_screen():
             if register_submit:
                 # Email ko clean format me lete hain.
                 email_key = reg_email.strip().lower()
-                if not reg_name.strip() or not email_key or not reg_password:
+                name_value = reg_name.strip()
+
+                if not name_value or not email_key or not reg_password or not reg_confirm:
                     # Blank values allow nahi karte.
-                    st.error("Name, email, and password are required.")
+                    st.error("Name, email, password, and confirm password are required.")
+                elif len(name_value) < 2:
+                    st.error("Full name must be at least 2 characters long.")
+                elif not is_valid_email(email_key):
+                    st.error("Please enter a valid email address.")
                 elif reg_password != reg_confirm:
                     # Dono password same hone chahiye.
                     st.error("Passwords do not match.")
-                elif email_key in st.session_state.users:
-                    # Same email pe duplicate account nahi banana.
-                    st.error("This email is already registered.")
                 else:
-                    # User data ko session_state me save karte hain.
-                    st.session_state.users[email_key] = {
-                        "name": reg_name.strip(),
-                        "email": email_key,
-                        # Password plain text me nahi, hash form me save hota hai.
-                        "password": hash_password(reg_password),
-                    }
-                    # Register ke baad user ko automatically logged in mark kar dete hain.
-                    st.session_state.authenticated = True
-                    # Current user ka record session me set hota hai.
-                    st.session_state.current_user = st.session_state.users[email_key]
-                    # Success message ke baad main app me rerun hota hai.
-                    st.success("Account created successfully.")
-                    st.rerun()
+                    password_error = validate_password(reg_password)
+                    if password_error:
+                        st.error(password_error)
+                    elif email_key in st.session_state.users:
+                        # Same email pe duplicate account nahi banana.
+                        st.error("This email is already registered.")
+                    else:
+                        # User data ko session_state me save karte hain.
+                        st.session_state.users[email_key] = {
+                            "name": name_value,
+                            "email": email_key,
+                            # Password plain text me nahi, hash form me save hota hai.
+                            "password": hash_password(reg_password),
+                        }
+                        # Register ke baad user ko automatically logged in mark kar dete hain.
+                        st.session_state.authenticated = True
+                        # Current user ka record session me set hota hai.
+                        st.session_state.current_user = st.session_state.users[email_key]
+                        # Success message ke baad main app me rerun hota hai.
+                        st.success("Account created successfully.")
+                        st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
 #API KEY LENA
 def get_configured_api_key():

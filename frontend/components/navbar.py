@@ -1,8 +1,7 @@
 import streamlit as st
-
 from frontend.ui.kit import UI
 
-
+#navbar use karke hum ek common header bana rahe hain jo auth aur workspace dono pages pe use hoga, jisme title, subtitle, aur styling hogi.
 def render_navbar(kicker, title, subtitle, hero_class):
     """Render a shared page header used by auth and workspace screens."""
     UI.html(

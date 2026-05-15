@@ -1,7 +1,5 @@
 import os
-
 import streamlit as st
-
 
 def get_configured_api_key():
     """Read Gemini API key from Streamlit secrets first, then environment."""

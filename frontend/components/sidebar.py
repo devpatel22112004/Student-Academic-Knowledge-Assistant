@@ -1,12 +1,10 @@
 import streamlit as st
-
 from src.services.knowledge_base_service import build_knowledge_base
 from src.utils.session import reset_workspace_state
 from frontend.ui.kit import UI
 
-
+#
 def render_sidebar():
-    """Render the workspace sidebar with account info, upload, and process actions."""
     if st.session_state.current_user:
         user_initial = "".join(part[0] for part in st.session_state.current_user["name"].split()[:2]).upper()
         if not user_initial:

@@ -5,9 +5,8 @@ from src.services.gemini_service import generate_with_flash
 from frontend.components.source_cards import prepare_source_items
 from frontend.ui.kit import UI
 
- 
+ #chat panel handles the main Q&A flow, including question input, answer generation, and chat history display.
 def render_chat_panel(api_key):
-    """Render the chat input, answer flow, and chat history."""
     st.markdown("Ask Away")
 
     question = st.chat_input("What do you want to know?")
@@ -24,7 +23,7 @@ def render_chat_panel(api_key):
                 kb["model"],
                 num_results=5,
             )
-
+# Try generating with Gemini Flash if API key is available, otherwise fall back to extractive answer. Store the Q&A pair in session state for chat history.
             if api_key.strip():
                 try:
                     with st.spinner("Generating answer..."):
@@ -45,7 +44,7 @@ def render_chat_panel(api_key):
                     "source_items": prepare_source_items(relevant),
                 }
             )
-
+# Display chat history
     if st.session_state.chat:
         for item in reversed(st.session_state.chat):
             with st.chat_message("user"):

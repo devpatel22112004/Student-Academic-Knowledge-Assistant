@@ -96,18 +96,27 @@ Type `quit` or `exit` to stop the program.
 
 ```
 Student-Academic-Knowledge-Assistant/
-├── app.py                       # Streamlit frontend (upload + chat + Gemini)
-├── main.py                      # CLI version of the assistant
+├── app.py                       # Thin Streamlit entrypoint
+├── main.py                      # CLI runner + core re-exports
+├── src/
+│   ├── core/                    # Document loading, chunking, embeddings, retrieval
+│   ├── services/                # Auth, Gemini, knowledge-base orchestration
+│   ├── ui/                      # Pages and reusable Streamlit components
+│   │   ├── pages/
+│   │   └── components/
+│   └── utils/                   # Session, CSS, runtime helpers
+├── styles/
+│   └── app.css                  # All shared UI styling
+├── data/                        # Put your PDF/TXT files here
 ├── .streamlit/
 │   └── secrets.toml             # Optional local API key config
-├── data/                        # Put your PDF/TXT files here
-│   ├── mumbaiindiansinfo.txt
-│   └── pdfs/
 ├── requirements.txt             # Packages needed
 └── README.md                    # This file
 ```
 
 **Note:** `.streamlit/secrets.toml` is local and should not be committed.
+
+**Package note:** `__init__.py` is optional here because Python can treat `src/` as a namespace package.
 
 ---
 

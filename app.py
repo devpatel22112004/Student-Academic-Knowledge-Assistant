@@ -1,7 +1,7 @@
 import streamlit as st
 
-from src.ui.pages.auth_page import render_auth_page
-from src.ui.pages.workspace_page import render_workspace_page
+from frontend.pages.auth_page import render_auth_page
+from frontend.pages.workspace_page import render_workspace_page
 from src.utils.css_loader import inject_custom_css
 from src.utils.env import launch_streamlit_app, running_inside_streamlit
 from src.utils.session import init_state

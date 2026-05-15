@@ -98,12 +98,12 @@ Type `quit` or `exit` to stop the program.
 Student-Academic-Knowledge-Assistant/
 ├── app.py                       # Thin Streamlit entrypoint
 ├── main.py                      # CLI runner + core re-exports
+├── frontend/                    # Streamlit pages and reusable UI components
+│   ├── pages/
+│   └── components/
 ├── src/
 │   ├── core/                    # Document loading, chunking, embeddings, retrieval
 │   ├── services/                # Auth, Gemini, knowledge-base orchestration
-│   ├── ui/                      # Pages and reusable Streamlit components
-│   │   ├── pages/
-│   │   └── components/
 │   └── utils/                   # Session, CSS, runtime helpers
 ├── styles/
 │   └── app.css                  # All shared UI styling

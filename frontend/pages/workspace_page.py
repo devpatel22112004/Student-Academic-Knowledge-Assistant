@@ -1,9 +1,9 @@
 import streamlit as st
 
 from src.services.gemini_service import get_configured_api_key
-from src.ui.components.chat_panel import render_chat_panel
-from src.ui.components.navbar import render_navbar
-from src.ui.components.sidebar import render_sidebar
+from frontend.components.chat_panel import render_chat_panel
+from frontend.components.navbar import render_navbar
+from frontend.components.sidebar import render_sidebar
 
 
 def render_workspace_page():

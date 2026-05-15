@@ -1,9 +1,8 @@
 import re
-
 import faiss
 import numpy as np
 
-
+# This module implements the core retrieval logic for the knowledge assistant. It includes functions to create vector embeddings from text chunks, build a FAISS index for efficient similarity search, extract keywords for lexical matching, and find relevant chunks based on a hybrid dense + lexical scoring approach.
 def build_search_index(embeddings):
     """Build a FAISS index over normalized embeddings."""
     emb = np.array(embeddings, dtype=np.float32)

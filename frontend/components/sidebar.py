@@ -3,7 +3,7 @@ from src.services.knowledge_base_service import build_knowledge_base
 from src.utils.session import reset_workspace_state
 from frontend.ui.kit import UI
 
-#
+# The sidebar component handles user account display and document upload functionality. It shows the logged-in user's name and email in a popover, allows them to sign out, and provides an interface to upload PDF or TXT files. Once files are uploaded and processed into a knowledge base, it displays the status and lists the uploaded file names.
 def render_sidebar():
     if st.session_state.current_user:
         user_initial = "".join(part[0] for part in st.session_state.current_user["name"].split()[:2]).upper()

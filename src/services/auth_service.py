@@ -1,11 +1,11 @@
 import hashlib
 
-
+# This module provides authentication and registration functions for an in-memory user management system. It includes password hashing, user validation, and account creation logic. The users are stored in a dictionary with email as the key and user details as the value.
 def hash_password(password):
     """Hash a password before storing it in session memory."""
     return hashlib.sha256(password.encode("utf-8")).hexdigest()
 
-
+# The authenticate_user function checks if the provided email and password match a user in the users dictionary. The register_user function creates a new user after validating the input and ensuring the email is not already registered. Both functions return a standardized response indicating success or failure along with a message and user details if applicable.
 def authenticate_user(users, email, password):
     """Validate login credentials against the in-memory users dictionary."""
     email_key = email.strip().lower()
@@ -19,7 +19,7 @@ def authenticate_user(users, email, password):
 
     return {"ok": True, "message": f"Welcome back, {user['name']}!", "user": user}
 
-
+# The register_user function creates a new user after validating the input and ensuring the email is not already registered. Both functions return a standardized response indicating success or failure along with a message and user details if applicable.
 def register_user(users, name, email, password, confirm_password):
     """Create a new in-memory user record after validation."""
     email_key = email.strip().lower()

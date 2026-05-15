@@ -4,9 +4,8 @@ import os
 
 from pypdf import PdfReader
 
-
+# This module provides functions to find and read documents from the local filesystem and uploaded files. It supports PDF and TXT formats, returning a list of (source, text) pairs for downstream processing.
 def find_all_documents():
-    """Find all PDF and TXT files inside the data folder."""
     data_path = Path("data")
     documents = []
 

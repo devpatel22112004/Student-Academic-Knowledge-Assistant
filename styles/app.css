@@ -67,20 +67,6 @@ h1, h2, h3, [data-testid="stSidebar"] h2 {
     color: var(--muted);
 }
 
-.clean-card {
-    background: rgba(255, 255, 255, 0.84);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 0.9rem 1rem;
-    margin-bottom: 1rem;
-    box-shadow: 0 6px 16px rgba(11, 24, 45, 0.05);
-}
-
-.muted {
-    color: var(--muted);
-    font-size: 0.93rem;
-}
-
 .auth-shell {
     max-width: 480px;
     padding: 0.8rem 0;

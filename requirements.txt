@@ -19,29 +19,3 @@ streamlit
 
 # google-generativeai: Gemini Flash model API integration
 google-generativeai
-
-# ===== BACKEND DEPENDENCIES =====
-# pymongo: MongoDB driver for database operations
-pymongo
-
-# python-dotenv: Load environment variables from .env file
-python-dotenv
-
-# PyJWT: JWT token generation and validation for authentication
-PyJWT
-
-# bcrypt: Password hashing for secure storage
-bcrypt
-
-# qdrant-client: Vector database client for similarity search (optional if using Qdrant)
-qdrant-client
-
-# ===== FASTAPI SERVER =====
-# fastapi: Modern web framework for building APIs
-fastapi
-
-# uvicorn: ASGI server for FastAPI
-uvicorn[standard]
-
-# pydantic: Data validation using Python type annotations
-pydantic[email]

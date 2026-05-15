@@ -2,7 +2,7 @@ import streamlit as st
 
 from src.services.auth_service import authenticate_user, register_user
 from frontend.components.navbar import render_navbar
-from frontend.ui import UI
+from frontend.ui.kit import UI
 
 
 def render_auth_page():

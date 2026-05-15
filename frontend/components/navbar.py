@@ -1,6 +1,6 @@
 import streamlit as st
 
-from frontend.ui import UI
+from frontend.ui.kit import UI
 
 
 def render_navbar(kicker, title, subtitle, hero_class):

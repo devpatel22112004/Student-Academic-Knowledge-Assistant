@@ -3,7 +3,7 @@ from src.core.answer_generation import generate_extractive_answer
 from src.core.retrieval import find_relevant_chunks
 from src.services.gemini_service import generate_with_flash
 from frontend.components.source_cards import prepare_source_items
-from frontend.ui import UI
+from frontend.ui.kit import UI
 
  
 def render_chat_panel(api_key):

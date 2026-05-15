@@ -2,7 +2,7 @@ import streamlit as st
 
 from src.services.knowledge_base_service import build_knowledge_base
 from src.utils.session import reset_workspace_state
-from frontend.ui import UI
+from frontend.ui.kit import UI
 
 
 def render_sidebar():

@@ -1,9 +1,11 @@
 import streamlit as st
 
+from frontend.ui import UI
+
 
 def render_navbar(kicker, title, subtitle, hero_class):
     """Render a shared page header used by auth and workspace screens."""
-    st.markdown(
+    UI.html(
         f'''
         <div class="{hero_class}">
             <div class="workspace-kicker">{kicker}</div>
@@ -16,5 +18,4 @@ def render_navbar(kicker, title, subtitle, hero_class):
             <div class="page-subtitle">{subtitle}</div>
         </div>
         ''',
-        unsafe_allow_html=True,
     )

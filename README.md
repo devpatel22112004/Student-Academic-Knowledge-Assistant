@@ -34,8 +34,13 @@ If you want LLM-generated answers (instead of only extractive local answers), cr
 
 Best option: store it once in Streamlit secrets so you do not need to paste it every time.
 
-1. Create the file `.streamlit/secrets.toml`
-2. Add:
+1. Create local secret file from template:
+
+```bash
+cp .streamlit/secrets.toml.example .streamlit/secrets.toml
+```
+
+2. Open `.streamlit/secrets.toml` and set your real key:
 
 ```bash
 GEMINI_API_KEY="your_api_key_here"
@@ -46,6 +51,14 @@ Optional terminal env var:
 ```bash
 export GEMINI_API_KEY="your_api_key_here"
 ```
+
+Optional local `.env` template is also provided:
+
+```bash
+cp .env.example .env
+```
+
+If you use `.env`, load it in your shell before running the app.
 
 ### Step 2: Add Your Documents
 
@@ -98,6 +111,7 @@ Type `quit` or `exit` to stop the program.
 Student-Academic-Knowledge-Assistant/
 ├── app.py                       # Thin Streamlit entrypoint
 ├── main.py                      # CLI runner + core re-exports
+├── .env.example                 # Local environment template (no real secrets)
 ├── frontend/                    # Streamlit pages and reusable UI components
 │   ├── pages/
 │   └── components/
@@ -109,12 +123,13 @@ Student-Academic-Knowledge-Assistant/
 │   └── app.css                  # All shared UI styling
 ├── data/                        # Put your PDF/TXT files here
 ├── .streamlit/
-│   └── secrets.toml             # Optional local API key config
+│   ├── secrets.toml             # Optional local API key config (local only)
+│   └── secrets.toml.example     # Template tracked in git
 ├── requirements.txt             # Packages needed
 └── README.md                    # This file
 ```
 
-**Note:** `.streamlit/secrets.toml` is local and should not be committed.
+**Note:** `.streamlit/secrets.toml` and `.env` are local and should not be committed.
 
 **Package note:** `__init__.py` is optional here because Python can treat `src/` as a namespace package.
 
@@ -179,7 +194,7 @@ A: As many as you want! The program will process all of them.
 A: Local retrieval works without internet. Gemini Flash generation requires internet and API access.
 
 **Q: Do I need a .env file?**
-A: No. You can store `GEMINI_API_KEY` in `.streamlit/secrets.toml` or set it as an environment variable.
+A: No. You can store `GEMINI_API_KEY` in `.streamlit/secrets.toml`. A `.env.example` template is provided only for teams that prefer `.env`-based local setup.
 
 **Q: Where does it save my questions?**
 A: Chat history is kept in Streamlit session memory while the app is running.

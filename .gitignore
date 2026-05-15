@@ -13,3 +13,6 @@ data/pdfs/*.pdf
 
 # Local Streamlit secrets should stay machine-private.
 .streamlit/secrets.toml
+
+# Local environment files may contain API keys.
+.env

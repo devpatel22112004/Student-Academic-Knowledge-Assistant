@@ -1,11 +1,11 @@
 import streamlit as st
-
 from src.core.answer_generation import generate_extractive_answer
 from src.core.retrieval import find_relevant_chunks
 from src.services.gemini_service import generate_with_flash
 from frontend.components.source_cards import prepare_source_items
+from frontend.ui import UI
 
-
+ 
 def render_chat_panel(api_key):
     """Render the chat input, answer flow, and chat history."""
     st.markdown("Ask Away")
@@ -52,32 +52,30 @@ def render_chat_panel(api_key):
                 st.markdown(item["question"])
 
             with st.chat_message("assistant"):
-                st.markdown(
+                UI.html(
                     f'''
                     <div class="answer-shell">
                         <div class="answer-label">Answer</div>
-                        <div class="answer-text">{item["answer"].replace(chr(10), "<br>")}</div>
+                        <div class="answer-text">{UI.nl2br(item["answer"])}</div>
                     </div>
                     ''' ,
-                    unsafe_allow_html=True,
                 )
 
-                st.markdown('<div class="source-wrap">', unsafe_allow_html=True)
-                st.markdown('<div class="source-title">Sources used</div>', unsafe_allow_html=True)
+                UI.html('<div class="source-wrap">')
+                UI.html('<div class="source-title">Sources used</div>')
                 for src in item["sources"]:
-                    st.markdown(f'<span class="source-pill">{src}</span>', unsafe_allow_html=True)
-                st.markdown('</div>', unsafe_allow_html=True)
+                    UI.html(f'<span class="source-pill">{UI.escape(src)}</span>')
+                UI.html('</div>')
 
                 with st.expander("View source details"):
                     for source_item in item.get("source_items", []):
-                        st.markdown(
+                        UI.html(
                             f'''
                             <div class="source-preview">
-                                <div class="source-preview-title">{source_item["source"]}</div>
-                                <div class="source-preview-text">{source_item["preview"]}</div>
+                                <div class="source-preview-title">{UI.escape(source_item["source"])}</div>
+                                <div class="source-preview-text">{UI.escape(source_item["preview"])}</div>
                             </div>
                             ''',
-                            unsafe_allow_html=True,
                         )
     else:
         st.info("Upload files, process them, and ask your first question.")

@@ -2,6 +2,7 @@ import streamlit as st
 
 from src.services.knowledge_base_service import build_knowledge_base
 from src.utils.session import reset_workspace_state
+from frontend.ui import UI
 
 
 def render_sidebar():
@@ -12,27 +13,25 @@ def render_sidebar():
             user_initial = st.session_state.current_user["name"][0].upper()
 
         with st.popover(user_initial):
-            st.markdown(
+            UI.html(
                 f'''
                 <div class="popover-account">
                     <div class="popover-account-label">Logged in account</div>
-                    <div class="popover-account-name">{st.session_state.current_user["name"]}</div>
-                    <div class="popover-account-mail">{st.session_state.current_user["email"]}</div>
+                    <div class="popover-account-name">{UI.escape(st.session_state.current_user["name"])}</div>
+                    <div class="popover-account-mail">{UI.escape(st.session_state.current_user["email"])}</div>
                 </div>
                 ''',
-                unsafe_allow_html=True,
             )
 
             if st.button("Sign out", use_container_width=True, key="sidebar_signout_button"):
                 reset_workspace_state()
                 st.rerun()
 
-    st.markdown('<div class="sidebar-section-title">Workspace</div>', unsafe_allow_html=True)
-    st.markdown(
+    UI.html('<div class="sidebar-section-title">Workspace</div>')
+    UI.html(
         '<div class="sidebar-section-subtitle">Upload your PDFs here. Search them whenever you need.</div>',
-        unsafe_allow_html=True,
     )
-    st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
+    UI.html('<div class="sidebar-divider"></div>')
 
     files = st.file_uploader(
         "Upload PDF or TXT",
@@ -56,7 +55,7 @@ def render_sidebar():
                 st.success("All set! Now you can ask your questions.")
 
     if st.session_state.kb is not None:
-        st.markdown('<div class="status-pill">Ready</div>', unsafe_allow_html=True)
+        UI.html('<div class="status-pill">Ready</div>')
 
     if st.session_state.uploaded_names:
         st.markdown(" Your Uploaded Files")

@@ -33,7 +33,7 @@ def lexical_overlap_score(query, chunk_text):
     hits = len(q_keywords.intersection(c_words))
     return hits / len(q_keywords)
 
-
+# This function finds the most relevant chunks for a given question by combining dense vector similarity from the FAISS index with a lexical overlap score. It retrieves candidate chunks based on dense similarity, then re-ranks them using a weighted hybrid score to return the top relevant chunks.
 def find_relevant_chunks(question, index, chunks, model, num_results=5):
     """Find the most relevant chunks for a question using dense + lexical ranking."""
     question_embedding = model.encode([question])

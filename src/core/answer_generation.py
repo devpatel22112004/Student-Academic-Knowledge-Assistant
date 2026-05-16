@@ -3,7 +3,6 @@ from src.core.retrieval import extract_keywords
 
 # This function generates an extractive answer by selecting sentences from the relevant chunks that have the highest keyword overlap with the question.
 def generate_extractive_answer(question, relevant_chunks, max_sentences=3):
-    """Build a short grounded answer by selecting the best matching sentences."""
     keywords = set(extract_keywords(question))
     sentence_candidates = []
 

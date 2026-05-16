@@ -35,7 +35,7 @@ def read_document_content(file_path):
 
     return content
 
-
+# This function reads uploaded files (PDF or TXT) from Streamlit's file uploader, extracts their text content, and returns a list of (source, text) pairs. For PDFs, it processes each page separately to maintain source granularity.
 def read_uploaded_documents(uploaded_files):
     """Read uploaded PDF or TXT files and return source-text pairs."""
     all_documents = []

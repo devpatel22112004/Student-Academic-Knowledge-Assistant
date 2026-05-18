@@ -4,12 +4,11 @@ import os
 
 from pypdf import PdfReader
 
-# This module provides functions to find and read documents from the local filesystem and uploaded files. It supports PDF and TXT formats, returning a list of (source, text) pairs for downstream processing.
+
 def find_all_documents():
     data_path = Path("data")
     documents = []
 
-    # Search only the document types this app supports.
     documents.extend(data_path.rglob("*.pdf"))
     documents.extend(data_path.rglob("*.txt"))
 
@@ -22,7 +21,6 @@ def read_document_content(file_path):
     file_name = file_path.name
 
     if file_path.suffix.lower() == ".pdf":
-        # Read PDF file page by page so source tracking stays accurate.
         reader = PdfReader(file_path)
         for page_num, page in enumerate(reader.pages, start=1):
             text = page.extract_text() or ""
@@ -35,7 +33,8 @@ def read_document_content(file_path):
 
     return content
 
-# This function reads uploaded files (PDF or TXT) from Streamlit's file uploader, extracts their text content, and returns a list of (source, text) pairs. For PDFs, it processes each page separately to maintain source granularity.
+
+
 def read_uploaded_documents(uploaded_files):
     """Read uploaded PDF or TXT files and return source-text pairs."""
     all_documents = []
@@ -45,7 +44,6 @@ def read_uploaded_documents(uploaded_files):
         suffix = os.path.splitext(name)[1].lower()
 
         if suffix == ".pdf":
-            # Streamlit uploads stay in memory, so PdfReader can read bytes directly.
             pdf_reader = PdfReader(io.BytesIO(uploaded.getvalue()))
             for i, page in enumerate(pdf_reader.pages, start=1):
                 page_text = page.extract_text() or ""

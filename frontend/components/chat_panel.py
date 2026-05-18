@@ -5,7 +5,7 @@ from src.services.gemini_service import generate_with_flash
 from frontend.components.source_cards import prepare_source_items
 from frontend.ui.kit import UI
 
- #chat panel handles the main Q&A flow, including question input, answer generation, and chat history display.
+# Main Q&A panel for questions, answers, and chat history.
 def render_chat_panel(api_key):
     st.markdown("Ask Away")
 
@@ -16,15 +16,16 @@ def render_chat_panel(api_key):
             st.warning("Please upload and process documents first.")
         else:
             kb = st.session_state.kb
-            user_id = kb.get("user_id", "default")  # Get user_id from KB
+            user_id = kb.get("user_id", "default")
             
             relevant = find_relevant_chunks(
                 question,
                 kb["model"],
                 num_results=5,
-                user_id=user_id  # Pass user_id for filtering
+                user_id=user_id
             )
-# Try generating with Gemini Flash if API key is available, otherwise fall back to extractive answer. Store the Q&A pair in session state for chat history.
+
+            # Use Gemini when available, otherwise fall back to extractive answers.
             if api_key.strip():
                 try:
                     with st.spinner("Generating answer..."):
@@ -45,7 +46,7 @@ def render_chat_panel(api_key):
                     "source_items": prepare_source_items(relevant),
                 }
             )
-# Display chat history
+
     if st.session_state.chat:
         for item in reversed(st.session_state.chat):
             with st.chat_message("user"):

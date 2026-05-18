@@ -1,4 +1,4 @@
-#source iteam means the source of the information used to generate the answer, such as a document or a webpage. The source item typically includes a preview of the content from that source, which can help users understand where the information is coming from and assess its relevance and credibility.
+# Build small source preview cards for the answer panel.
 def prepare_source_items(relevant_chunks):
     """Create deduplicated source preview items for the answer panel."""
     source_items = []

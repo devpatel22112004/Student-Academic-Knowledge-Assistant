@@ -14,7 +14,7 @@ def render_workspace_page():
     if st.session_state.kb is None and st.session_state.current_user:
         user_id = st.session_state.current_user.get("email", "default")
         try:
-            # Initialize KB without uploading files - just prepare for querying
+            # Prepare knowledge base for querying without uploading files
             kb = build_knowledge_base(None, user_id=user_id)
             if kb:
                 st.session_state.kb = kb

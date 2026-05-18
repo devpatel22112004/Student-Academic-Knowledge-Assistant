@@ -1,6 +1,6 @@
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-# This function takes a list of documents (source, text) and splits the text into overlapping chunks for better retrieval performance. Each chunk is associated with its source and a unique chunk ID.
+
 def chunk_text(all_documents):
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=700,

@@ -8,7 +8,6 @@ import os
 from pinecone import Pinecone
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
 load_dotenv()
 
 class PineconeService:
@@ -18,7 +17,6 @@ class PineconeService:
         self.host = os.getenv("PINECONE_HOST")
         self.index_name = os.getenv("PINECONE_INDEX_NAME", "student-assistant")
         
-        # Initialize Pinecone client
         self.pc = Pinecone(api_key=self.api_key)
         self.index = self.pc.Index(host=self.host)
         
@@ -29,10 +27,9 @@ class PineconeService:
     def file_exists(self, file_hash: str, user_id: str) -> bool:
         """Check if file already processed using hash - checks Pinecone metadata"""
         try:
-            # Query with metadata filter - this is more reliable than dummy vectors
             results = self.index.query(
-                vector=[0] * 384,  # Dummy vector - we're filtering by metadata only
-                top_k=100,  # Get more results to check
+                vector=[0] * 384,
+                top_k=100,
                 filter={
                     "$and": [
                         {"file_hash": {"$eq": file_hash}},
@@ -45,7 +42,6 @@ class PineconeService:
             return file_found
         except Exception as e:
             print(f"⚠️ Warning checking file existence: {e}")
-            # On error, assume file doesn't exist (don't block upload)
             return False
     
     def get_user_file_hashes(self, user_id: str) -> set:
@@ -145,7 +141,6 @@ class PineconeService:
             raise
 
 
-# Global instance
 _pinecone_service = None
 
 def get_pinecone_service():

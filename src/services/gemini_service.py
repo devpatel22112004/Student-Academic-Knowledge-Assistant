@@ -1,11 +1,18 @@
 import os
-import streamlit as st
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 def get_configured_api_key():
-    """Read Gemini API key from Streamlit secrets first, then environment."""
-    if "GEMINI_API_KEY" in st.secrets:
-        return st.secrets["GEMINI_API_KEY"]
-    return os.getenv("GEMINI_API_KEY", "")
+    """Read Gemini API key from .env file."""
+    api_key = os.getenv("GEMINI_API_KEY", "")
+    if not api_key:
+        raise ValueError(
+            "GEMINI_API_KEY not found in .env file. "
+            "Please set your Gemini API key in .env file: GEMINI_API_KEY=your_key_here"
+        )
+    return api_key
 
 
 def generate_with_flash(api_key, question, relevant_chunks):

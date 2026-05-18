@@ -1,0 +1,18 @@
+{
+  "dev@example.com": [
+    {
+      "name": "rcbinfo.pdf",
+      "hash": "bd033c950eb57e4ecf4f5153c23fb86b",
+      "date": "18 May 2026",
+      "timestamp": "2026-05-18T10:02:51.435207"
+    }
+  ],
+  "patel@exe.com": [
+    {
+      "name": "rcbinfo.pdf",
+      "hash": "bd033c950eb57e4ecf4f5153c23fb86b",
+      "date": "18 May 2026",
+      "timestamp": "2026-05-18T11:37:47.007087"
+    }
+  ]
+}

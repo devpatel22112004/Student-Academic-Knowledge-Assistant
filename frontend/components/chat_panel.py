@@ -16,12 +16,13 @@ def render_chat_panel(api_key):
             st.warning("Please upload and process documents first.")
         else:
             kb = st.session_state.kb
+            user_id = kb.get("user_id", "default")  # Get user_id from KB
+            
             relevant = find_relevant_chunks(
                 question,
-                kb["index"],
-                kb["chunks"],
                 kb["model"],
                 num_results=5,
+                user_id=user_id  # Pass user_id for filtering
             )
 # Try generating with Gemini Flash if API key is available, otherwise fall back to extractive answer. Store the Q&A pair in session state for chat history.
             if api_key.strip():

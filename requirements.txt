@@ -2,11 +2,11 @@
 # langchain-text-splitters: text chunks banane ke liye (1000 size, 200 overlap)
 langchain-text-splitters
 
-# faiss-cpu: fast similarity search ke liye vector embeddings ko index karne ke liye
-faiss-cpu
-
 # sentence-transformers: text ko convert karne ke liye vector embeddings me
 sentence-transformers
+
+# pinecone: Vector database for persistent embedding storage
+pinecone
 
 # pypdf: PDF files se text extract karne ke liye
 pypdf
@@ -19,3 +19,6 @@ streamlit
 
 # google-generativeai: Gemini Flash model API integration
 google-generativeai
+
+# python-dotenv: Load environment variables from .env file
+python-dotenv

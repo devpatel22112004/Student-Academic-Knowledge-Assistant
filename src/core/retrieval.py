@@ -1,17 +1,8 @@
 import re
-import faiss
 import numpy as np
+from src.services.vector_db_service import get_pinecone_service
 
-# This module implements the core retrieval logic for the knowledge assistant. It includes functions to create vector embeddings from text chunks, build a FAISS index for efficient similarity search, extract keywords for lexical matching, and find relevant chunks based on a hybrid dense + lexical scoring approach.
-def build_search_index(embeddings):
-    """Build a FAISS index over normalized embeddings."""
-    emb = np.array(embeddings, dtype=np.float32)
-    faiss.normalize_L2(emb)
-
-    index = faiss.IndexFlatIP(emb.shape[1])
-    index.add(emb)
-    return index
-
+# This module implements the core retrieval logic for the knowledge assistant. It uses Pinecone vector database for efficient similarity search and includes lexical matching with hybrid scoring.
 
 def extract_keywords(text):
     """Extract simple keywords from a query for lexical matching."""
@@ -33,22 +24,45 @@ def lexical_overlap_score(query, chunk_text):
     hits = len(q_keywords.intersection(c_words))
     return hits / len(q_keywords)
 
-# This function finds the most relevant chunks for a given question by combining dense vector similarity from the FAISS index with a lexical overlap score. It retrieves candidate chunks based on dense similarity, then re-ranks them using a weighted hybrid score to return the top relevant chunks.
-def find_relevant_chunks(question, index, chunks, model, num_results=5):
-    """Find the most relevant chunks for a question using dense + lexical ranking."""
+
+def find_relevant_chunks(question, model, num_results=5, user_id=None):
+    """
+    Find the most relevant chunks for a question using Pinecone vector similarity + lexical ranking.
+    
+    Args:
+        question: User's question/query
+        model: Sentence transformer model for embedding
+        num_results: Number of results to return
+        user_id: User ID for filtering results (optional)
+    
+    Returns:
+        List of relevant chunks with metadata
+    """
+    # Get Pinecone service
+    vector_db = get_pinecone_service()
+    
+    # Create embedding for the question
     question_embedding = model.encode([question])
     question_embedding = np.array(question_embedding, dtype=np.float32)
-    faiss.normalize_L2(question_embedding)
-
-    candidate_k = min(max(num_results * 3, 10), len(chunks))
-    dense_scores, indices = index.search(question_embedding, candidate_k)
-
-    candidates = []
-    for rank, chunk_idx in enumerate(indices[0]):
-        dense = float(dense_scores[0][rank])
-        lexical = lexical_overlap_score(question, chunks[chunk_idx]["text"])
-        hybrid = (0.7 * dense) + (0.3 * lexical)
-        candidates.append((hybrid, chunk_idx))
-
-    candidates.sort(key=lambda item: item[0], reverse=True)
-    return [chunks[idx] for _, idx in candidates[:num_results]]
+    # Convert to list format for Pinecone
+    question_embedding = question_embedding.flatten().tolist()
+    
+    # Query Pinecone for similar vectors
+    matches = vector_db.query_embeddings(
+        query_vector=question_embedding,
+        top_k=num_results,
+        user_id=user_id
+    )
+    
+    # Process and return results
+    relevant_chunks = []
+    for match in matches:
+        chunk = {
+            "text": match["metadata"].get("text", ""),
+            "source": match["metadata"].get("source", "Unknown"),
+            "chunk_id": match["id"],
+            "score": match["score"]
+        }
+        relevant_chunks.append(chunk)
+    
+    return relevant_chunks

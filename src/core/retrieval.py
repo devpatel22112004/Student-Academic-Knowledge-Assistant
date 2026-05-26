@@ -23,7 +23,7 @@ def lexical_overlap_score(query, chunk_text):
     return hits / len(q_keywords)
 
 
-def find_relevant_chunks(question, model, num_results=5, user_id=None):
+def find_relevant_chunks(question, model, num_results=5, user_id=None, file_hashes=None):
     """
     Find the most relevant chunks for a question using Pinecone vector similarity + lexical ranking.
     
@@ -32,6 +32,7 @@ def find_relevant_chunks(question, model, num_results=5, user_id=None):
         model: Sentence transformer model for embedding
         num_results: Number of results to return
         user_id: User ID for filtering results (optional)
+        file_hashes: Optional list of file hashes to restrict the search scope
     
     Returns:
         List of relevant chunks with metadata
@@ -45,7 +46,8 @@ def find_relevant_chunks(question, model, num_results=5, user_id=None):
     matches = vector_db.query_embeddings(
         query_vector=question_embedding,
         top_k=num_results,
-        user_id=user_id
+        user_id=user_id,
+        file_hashes=file_hashes
     )
 
     relevant_chunks = []

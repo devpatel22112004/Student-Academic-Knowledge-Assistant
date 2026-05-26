@@ -9,6 +9,8 @@ def init_state():
         st.session_state.chat = []
     if "uploaded_names" not in st.session_state:
         st.session_state.uploaded_names = []
+    if "selected_file_hashes" not in st.session_state:
+        st.session_state.selected_file_hashes = []
     if "users" not in st.session_state:
         st.session_state.users = {}
     if "authenticated" not in st.session_state:
@@ -22,5 +24,6 @@ def reset_workspace_state():
     st.session_state.kb = None
     st.session_state.chat = []
     st.session_state.uploaded_names = []
+    st.session_state.selected_file_hashes = []
     st.session_state.authenticated = False
     st.session_state.current_user = None

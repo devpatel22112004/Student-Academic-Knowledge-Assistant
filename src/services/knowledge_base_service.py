@@ -1,6 +1,6 @@
 from src.core.chunking import chunk_text
 from src.core.document_loader import read_uploaded_documents
-from src.core.embeddings import create_embeddings
+from src.core.embeddings import create_embeddings, get_embedding_model
 from src.services.vector_db_service import get_pinecone_service
 from src.utils.user_files import (
     add_user_file, 
@@ -23,12 +23,10 @@ def build_knowledge_base(uploaded_files, user_id="default", check_duplicates_onl
         Dictionary with knowledge base info including model for querying, or duplicate info
     """
     if uploaded_files is None or len(uploaded_files) == 0:
-        _, model = create_embeddings([{"text": "dummy", "source": "dummy"}])
-        vector_db = get_pinecone_service()
         return {
             "chunks": [],
-            "model": model,
-            "vector_db": vector_db,
+            "model": None,
+            "vector_db": None,
             "user_id": user_id,
             "vectors_count": 0,
             "initialized": True
@@ -69,14 +67,13 @@ def build_knowledge_base(uploaded_files, user_id="default", check_duplicates_onl
 
     if len(duplicate_files) > 0 and len(new_files) == 0:
         print(f"⚠️ ALL FILES ARE DUPLICATES: {duplicate_files}")
-        _, model = create_embeddings([{"text": "dummy", "source": "dummy"}])
         return {
             "error": "duplicate",
             "message": f"⚠️ ALL {len(duplicate_files)} file(s) are already in your knowledge base!",
             "details": "These files were previously uploaded. You can ask questions about them, but no new documents were added.",
             "duplicate_files": [{"name": name, "status": "already_uploaded"} for name in sorted(duplicate_files)],
             "chunks": [],
-            "model": model,
+            "model": None,
             "vector_db": vector_db,
             "user_id": user_id,
             "vectors_count": 0,
@@ -104,7 +101,7 @@ def build_knowledge_base(uploaded_files, user_id="default", check_duplicates_onl
     if chunks:
         embeddings, model = create_embeddings(chunks)
     else:
-        _, model = create_embeddings([{"text": "dummy", "source": "dummy"}])
+        model = get_embedding_model()
         embeddings = []
 
     file_hash_map = {}

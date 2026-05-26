@@ -4,6 +4,42 @@ from src.utils.session import reset_workspace_state
 from src.utils.user_files import get_user_files
 from frontend.ui.kit import UI
 
+
+def _build_history_file_options(user_files):
+    options = []
+    option_map = {}
+
+    for file_info in user_files:
+        file_name = file_info.get("name", "Unknown")
+        file_date = file_info.get("date", "Unknown date")
+        file_hash = file_info.get("hash")
+
+        if not file_hash:
+            continue
+
+        label = f"{file_name} | {file_date} | {file_hash[:8]}"
+        options.append(label)
+        option_map[label] = file_hash
+
+    return options, option_map
+
+
+def _sync_selected_files_with_history(user_files):
+    available_hashes = [file_info.get("hash") for file_info in user_files if file_info.get("hash")]
+    if not available_hashes:
+        st.session_state.selected_file_hashes = []
+        st.session_state.selected_file_labels = []
+        return
+
+    current_hashes = st.session_state.get("selected_file_hashes", [])
+    if not current_hashes:
+        st.session_state.selected_file_hashes = available_hashes
+        st.session_state.selected_file_labels = []
+        return
+
+    filtered_hashes = [file_hash for file_hash in current_hashes if file_hash in available_hashes]
+    st.session_state.selected_file_hashes = filtered_hashes or available_hashes
+
 # Sidebar for account actions, uploads, and file history.
 def render_sidebar():
     if st.session_state.current_user:
@@ -55,6 +91,8 @@ def render_sidebar():
                 for dup_file in kb.get("duplicate_files", []):
                     st.markdown(f"  ✓ {dup_file['name']} (Already uploaded)")
                 st.session_state.uploaded_names = [f.name for f in files]
+                user_files = get_user_files(user_id)
+                st.session_state.selected_file_hashes = [file_info.get("hash") for file_info in user_files if file_info.get("hash")]
 
             elif kb and kb.get("error") == "mixed":
                 st.session_state.kb = kb
@@ -72,6 +110,8 @@ def render_sidebar():
                         st.markdown(f"  + {new_file}")
 
                 st.session_state.uploaded_names = [f.name for f in files]
+                user_files = get_user_files(user_id)
+                st.session_state.selected_file_hashes = [file_info.get("hash") for file_info in user_files if file_info.get("hash")]
 
             elif kb is None:
                 st.error("❌ Uploaded files had no readable text.")
@@ -79,6 +119,8 @@ def render_sidebar():
             else:
                 st.session_state.kb = kb
                 st.session_state.uploaded_names = [f.name for f in files]
+                user_files = get_user_files(user_id)
+                st.session_state.selected_file_hashes = [file_info.get("hash") for file_info in user_files if file_info.get("hash")]
                 vectors_count = kb.get("vectors_count", len(kb.get("chunks", [])))
                 st.success(f"✅ {kb.get('message', 'Processed!')}")
                 st.markdown(f"📊 Stored {vectors_count} chunks in knowledge base")
@@ -94,11 +136,31 @@ def render_sidebar():
     if st.session_state.current_user:
         user_id = st.session_state.current_user.get("email", "default")
         user_files = get_user_files(user_id)
+        _sync_selected_files_with_history(user_files)
         
         if user_files:
             st.divider()
             st.markdown("**📚 Your File History**")
             st.caption("Files you've previously uploaded")
+
+            options, option_map = _build_history_file_options(user_files)
+            hash_to_label = {file_hash: label for label, file_hash in option_map.items()}
+            default_labels = [hash_to_label[file_hash] for file_hash in st.session_state.selected_file_hashes if file_hash in hash_to_label]
+
+            current_labels = st.session_state.get("selected_file_labels", [])
+            valid_labels = [label for label in current_labels if label in options] if current_labels else default_labels or options
+            if valid_labels != current_labels:
+                st.session_state.selected_file_labels = valid_labels
+
+            chosen_labels = st.multiselect(
+                "Select files to search",
+                options=options,
+                help="Queries will search only the selected files. Leave all selected for the broadest answer.",
+                key="selected_file_labels",
+            )
+
+            selected_hashes = [option_map[label] for label in chosen_labels if label in option_map]
+            st.session_state.selected_file_hashes = selected_hashes or [option_map[label] for label in options]
             
             for file_info in user_files:
                 file_name = file_info.get("name", "Unknown")

@@ -92,12 +92,15 @@ class PineconeService:
     def query_embeddings(self, 
                         query_vector: list,
                         top_k: int = 5,
-                        user_id: str = None) -> list:
+                        user_id: str = None,
+                        file_hashes: list = None) -> list:
         """Query similar embeddings from Pinecone"""
         try:
             filter_dict = {}
             if user_id:
                 filter_dict["user_id"] = user_id
+            if file_hashes:
+                filter_dict["file_hash"] = {"$in": file_hashes}
             
             results = self.index.query(
                 vector=query_vector,

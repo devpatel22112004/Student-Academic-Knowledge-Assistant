@@ -1,5 +1,6 @@
 import streamlit as st
 from src.core.answer_generation import generate_extractive_answer
+from src.core.embeddings import get_embedding_model
 from src.core.retrieval import find_relevant_chunks
 from src.services.gemini_service import generate_with_flash
 from frontend.components.source_cards import prepare_source_items
@@ -17,12 +18,19 @@ def render_chat_panel(api_key):
         else:
             kb = st.session_state.kb
             user_id = kb.get("user_id", "default")
+            selected_file_hashes = st.session_state.get("selected_file_hashes", [])
+
+            if kb.get("model") is None:
+                with st.spinner("Preparing search model for your first question..."):
+                    kb["model"] = get_embedding_model()
+                    st.session_state.kb = kb
             
             relevant = find_relevant_chunks(
                 question,
                 kb["model"],
                 num_results=5,
-                user_id=user_id
+                user_id=user_id,
+                file_hashes=selected_file_hashes or None
             )
 
             # Use Gemini when available, otherwise fall back to extractive answers.

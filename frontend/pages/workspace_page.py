@@ -10,18 +10,17 @@ from frontend.components.sidebar import render_sidebar
 def render_workspace_page():
     """Render the main workspace where files are uploaded and questions are asked."""
     
-    # Auto-load KB on page init if user has files and KB not yet loaded
+    # Keep first render lightweight; load embeddings model only when user asks a question.
     if st.session_state.kb is None and st.session_state.current_user:
         user_id = st.session_state.current_user.get("email", "default")
-        try:
-            # Prepare knowledge base for querying without uploading files
-            kb = build_knowledge_base(None, user_id=user_id)
-            if kb:
-                st.session_state.kb = kb
-                st.session_state.chat = []
-                st.session_state.uploaded_names = []
-        except Exception as e:
-            print(f"Note: Could not auto-load KB on init: {e}")
+        st.session_state.kb = {
+            "chunks": [],
+            "model": None,
+            "vector_db": None,
+            "user_id": user_id,
+            "vectors_count": 0,
+            "initialized": True,
+        }
     
     render_navbar(
         "Your workspace",
